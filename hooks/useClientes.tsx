@@ -126,7 +126,7 @@ export function useClientes() {
       let vendaId: string | undefined;
       
       if (data.valorTotal && data.produtos && data.produtos.length > 0) {
-        const vendaData: Omit<Venda, 'id'> = {
+        const vendaData: any = { // ✅ Mude para any
           dataVenda: agora,
           valorTotal: data.valorTotal,
           produtos: data.produtos,
