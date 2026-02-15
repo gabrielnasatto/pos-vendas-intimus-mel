@@ -29,7 +29,7 @@ export default function VendaDetalhesPage() {
     try {
       const vendaDoc = await getDoc(doc(db, 'vendas', id));
       if (vendaDoc.exists()) {
-        const vendaData = { id: vendaDoc.id, ...vendaDoc.data() };
+        const vendaData: any = { id: vendaDoc.id, ...vendaDoc.data() };
         setVenda(vendaData);
 
         // Buscar cliente
