@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { Cliente, Venda } from '@/types';
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft, Phone, Calendar, ShoppingBag, Plus } from 'lucide-react';
+import { ArrowLeft, Phone, Calendar, ShoppingBag, Plus, Edit } from 'lucide-react';
 import { formatarData, formatarTelefone, calcularIdade, formatarMoeda } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -18,6 +18,7 @@ export default function ClienteDetalhesPage() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -61,9 +62,9 @@ export default function ClienteDetalhesPage() {
     
     if (confirm(`Tem certeza que deseja deletar o cliente "${cliente.nome}"?\n\nAtenção: Todas as vendas vinculadas também serão removidas!`)) {
       try {
-        setLoading(true);
+        setDeleting(true);
         
-        // ✅ Buscar e deletar TODAS as vendas do cliente
+        // Buscar e deletar TODAS as vendas do cliente
         const vendasRef = collection(db, 'vendas');
         const q = query(vendasRef, where('clienteId', '==', cliente.id));
         const vendasSnapshot = await getDocs(q);
@@ -84,7 +85,7 @@ export default function ClienteDetalhesPage() {
         console.error(error);
         toast.error('Erro ao deletar cliente');
       } finally {
-        setLoading(false);
+        setDeleting(false);
       }
     }
   };
@@ -96,7 +97,7 @@ export default function ClienteDetalhesPage() {
   if (!cliente) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Cliente não encontrado</p>
+        <p className="text-gray-400 mb-4">Cliente não encontrado</p>
         <Link href="/clientes">
           <Button>Voltar para Clientes</Button>
         </Link>
@@ -117,13 +118,15 @@ export default function ClienteDetalhesPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">{cliente.nome}</h1>
-            <p className="text-gray-600 mt-2">Detalhes e histórico do cliente</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+              {cliente.nome}
+            </h1>
+            <p className="text-gray-400 mt-2">Detalhes e histórico do cliente</p>
           </div>
-          <Link href="/vendas/nova">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Venda
+          <Link href={`/clientes/${cliente.id}/editar`}>
+            <Button variant="secondary">
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
             </Button>
           </Link>
         </div>
@@ -138,8 +141,8 @@ export default function ClienteDetalhesPage() {
             <div className="flex items-center">
               <Phone className="w-5 h-5 text-gray-400 mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Telefone</p>
-                <p className="font-medium">{formatarTelefone(cliente.telefone)}</p>
+                <p className="text-sm text-gray-400">Telefone</p>
+                <p className="font-medium text-white">{formatarTelefone(cliente.telefone)}</p>
               </div>
             </div>
 
@@ -147,8 +150,8 @@ export default function ClienteDetalhesPage() {
               <div className="flex items-center">
                 <Calendar className="w-5 h-5 text-gray-400 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-600">Data de Nascimento</p>
-                  <p className="font-medium">
+                  <p className="text-sm text-gray-400">Data de Nascimento</p>
+                  <p className="font-medium text-white">
                     {cliente.dataNascimento} ({calcularIdade(cliente.dataNascimento)} anos)
                   </p>
                 </div>
@@ -158,8 +161,8 @@ export default function ClienteDetalhesPage() {
             <div className="flex items-center">
               <ShoppingBag className="w-5 h-5 text-gray-400 mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Cadastrado em</p>
-                <p className="font-medium">{formatarData(cliente.dataCadastro)}</p>
+                <p className="text-sm text-gray-400">Cadastrado em</p>
+                <p className="font-medium text-white">{formatarData(cliente.dataCadastro)}</p>
               </div>
             </div>
           </CardContent>
@@ -171,12 +174,14 @@ export default function ClienteDetalhesPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600">Total de Vendas</p>
-              <p className="text-3xl font-bold">{vendas.length}</p>
+              <p className="text-sm text-gray-400">Total de Vendas</p>
+              <p className="text-3xl font-bold text-white">{vendas.length}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Gasto</p>
-              <p className="text-2xl font-bold text-green-600">{formatarMoeda(totalGasto)}</p>
+              <p className="text-sm text-gray-400">Total Gasto</p>
+              <p className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                {formatarMoeda(totalGasto)}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -195,9 +200,9 @@ export default function ClienteDetalhesPage() {
             <Button 
               variant="danger" 
               onClick={handleDelete}
+              loading={deleting}
+              disabled={deleting}
               className="w-full"
-              loading={loading}
-              disabled={loading}
             >
               Deletar Cliente
             </Button>
@@ -212,7 +217,7 @@ export default function ClienteDetalhesPage() {
         <CardContent>
           {vendas.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Nenhuma venda registrada ainda</p>
+              <p className="text-gray-400 mb-4">Nenhuma venda registrada ainda</p>
               <Link href="/vendas/nova">
                 <Button size="sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -223,16 +228,18 @@ export default function ClienteDetalhesPage() {
           ) : (
             <div className="space-y-3">
               {vendas.map((venda) => (
-                <div key={venda.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={venda.id} className="border border-burgundy-800/30 rounded-xl p-4 hover:bg-burgundy-900/30 transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-200">{formatarData(venda.dataVenda)}</span>
-                    <span className="text-lg font-bold">{formatarMoeda(venda.valorTotal)}</span>
+                    <span className="text-sm text-gray-400">{formatarData(venda.dataVenda)}</span>
+                    <span className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                      {formatarMoeda(venda.valorTotal)}
+                    </span>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    <strong>Produtos:</strong> {venda.produtos.map(p => p.nome).join(', ')}
+                  <div className="text-sm text-gray-300">
+                    <strong>Produtos:</strong> {venda.produtos.length > 0 ? venda.produtos.map(p => p.nome).join(', ') : 'Sem produtos'}
                   </div>
                   {venda.observacoes && (
-                    <div className="text-sm text-gray-600 mt-2">
+                    <div className="text-sm text-gray-400 mt-2">
                       <strong>Obs:</strong> {venda.observacoes}
                     </div>
                   )}

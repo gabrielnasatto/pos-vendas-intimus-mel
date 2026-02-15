@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useClientes } from '@/hooks/useClientes';
 import Button from '@/components/ui/Button';
-import { Plus, Eye, Trash2, Phone, Calendar, Search } from 'lucide-react';
+import { Plus, Eye, Trash2, Phone, Calendar, Search, Edit } from 'lucide-react';
 import { formatarTelefone } from '@/lib/utils';
 import { useState } from 'react';
+
 
 export default function ClientesPage() {
   const { clientes, loading, deletarCliente } = useClientes();
@@ -110,6 +111,12 @@ export default function ClientesPage() {
               </div>
               
               <div className="flex gap-2">
+                <Link href={`/clientes/${cliente.id}/editar`} className="flex-1"> {/* ✅ NOVO */}
+                  <Button size="sm" variant="secondary" className="w-full">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
+                </Link>
                 <Link href={`/clientes/${cliente.id}`} className="flex-1">
                   <Button size="sm" variant="secondary" className="w-full">
                     <Eye className="w-4 h-4 mr-2" />

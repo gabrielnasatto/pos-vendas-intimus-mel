@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useVendas } from '@/hooks/useVendas';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { Plus, Search, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Trash2, Eye, Edit } from 'lucide-react';
 import { formatarData, formatarMoeda } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -137,6 +137,11 @@ export default function VendasPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <Link href={`/vendas/${venda.id}/editar`}> {/* ✅ NOVO */}
+                          <Button size="sm" variant="ghost" className="hover:bg-primary-500/10 hover:text-primary-400">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </Link>
                         <Link href={`/vendas/${venda.id}`}>
                           <Button size="sm" variant="ghost">
                             <Eye className="w-4 h-4" />

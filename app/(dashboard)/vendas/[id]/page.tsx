@@ -192,6 +192,11 @@ export default function VendaDetalhesPage() {
       )}
 
       <div className="flex gap-4">
+        <Link href={`/vendas/${venda.id}/editar`}> {/* ✅ NOVO */}
+        <Button variant="secondary">
+            Editar Venda
+            </Button>
+        </Link>
         <Button variant="danger" onClick={handleDelete}>
           Deletar Venda
         </Button>
