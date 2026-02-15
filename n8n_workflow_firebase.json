@@ -1,0 +1,136 @@
+{
+  "name": "Pós Vendas - Firebase",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "*/30 8-19 * * 1-5"
+            }
+          ]
+        }
+      },
+      "name": "Cron - A cada 30min",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://seu-app.vercel.app/api/clientes",
+        "options": {}
+      },
+      "name": "Buscar Clientes (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "from datetime import datetime\nimport pytz\n\ntz_br = pytz.timezone('America/Sao_Paulo')\nagora = datetime.now(tz_br)\n\nresultados = []\n\nfor item in items:\n    data = item.json\n    data_str = data.get('dataCadastro', '')\n    \n    if not data_str:\n        continue\n    \n    try:\n        dt_cad = datetime.fromisoformat(data_str.replace('Z', '+00:00'))\n        dt_cad = dt_cad.astimezone(tz_br)\n        \n        diff = agora - dt_cad\n        horas = diff.total_seconds() / 3600\n        \n        data['Passou24h'] = horas >= 24\n        resultados.append({'json': data})\n    except:\n        continue\n\nreturn resultados"
+      },
+      "name": "Calcular 24h",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.Passou24h}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Passou 24h?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.provou}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Provou?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "TESTE",
+        "remoteJid": "=55{{$json.telefone}}",
+        "messageText": "=Oi {{$json.nome.split(' ')[0]}}! 😊\n\nTudo bem? Aqui é da loja!\n\nVi que você provou algumas peças aqui ontem. Conseguiu pensar melhor sobre a compra?\n\nSe tiver alguma dúvida ou quiser saber mais, estou aqui! 💕\n\nAh, e se quiser passar aqui de novo, ficarei super feliz em te atender!"
+      },
+      "name": "Enviar - Provou",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "TESTE",
+        "remoteJid": "=55{{$json.telefone}}",
+        "messageText": "=Oi {{$json.nome.split(' ')[0]}}! 😊\n\nObrigada por ter vindo na loja ontem! Espero que tenha adorado sua compra! 💕\n\nQualquer dúvida ou se precisar de algo, pode me chamar aqui no WhatsApp, tá?\n\nJá vou te adicionar nos nossos contatos para te avisar quando chegarem novidades!\n\nVolte sempre! 🛍️"
+      },
+      "name": "Enviar - Comprou",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://seu-app.vercel.app/api/clientes",
+        "method": "PATCH",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n  \"clienteId\": \"{{$json.id}}\",\n  \"status\": \"enviado\",\n  \"dataEnvio\": \"{{DateTime.now().toISO()}}\"\n}"
+      },
+      "name": "Atualizar Status - Enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Cron - A cada 30min": {
+      "main": [[{"node": "Buscar Clientes (API)", "type": "main", "index": 0}]]
+    },
+    "Buscar Clientes (API)": {
+      "main": [[{"node": "Calcular 24h", "type": "main", "index": 0}]]
+    },
+    "Calcular 24h": {
+      "main": [[{"node": "Passou 24h?", "type": "main", "index": 0}]]
+    },
+    "Passou 24h?": {
+      "main": [[{"node": "Provou?", "type": "main", "index": 0}]]
+    },
+    "Provou?": {
+      "main": [
+        [{"node": "Enviar - Provou", "type": "main", "index": 0}],
+        [{"node": "Enviar - Comprou", "type": "main", "index": 0}]
+      ]
+    },
+    "Enviar - Provou": {
+      "main": [[{"node": "Atualizar Status - Enviado", "type": "main", "index": 0}]]
+    },
+    "Enviar - Comprou": {
+      "main": [[{"node": "Atualizar Status - Enviado", "type": "main", "index": 0}]]
+    }
+  }
+}
