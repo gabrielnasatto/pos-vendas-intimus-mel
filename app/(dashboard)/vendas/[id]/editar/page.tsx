@@ -44,10 +44,10 @@ export default function EditarVendaPage() {
   );
 
   useEffect(() => {
-    if (params.id) {
-      fetchVenda(params.id as string);
+    if (params?.id) {
+      fetchVenda(params?.id as string);
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const fetchVenda = async (id: string) => {
     try {
@@ -179,7 +179,7 @@ export default function EditarVendaPage() {
 
       const valorTotal = produtos.reduce((sum, p) => sum + p.valor, 0);
 
-      await updateDoc(doc(db, 'vendas', params.id as string), {
+      await updateDoc(doc(db, 'vendas', params?.id as string), {
         clienteId: clienteSelecionado.id,
         valorTotal,
         produtos,
@@ -193,7 +193,7 @@ export default function EditarVendaPage() {
         // Atualizar novo cliente
         await updateDoc(doc(db, 'clientes', clienteSelecionado.id), {
           status: 'pendente',
-          vendaId: params.id,
+          vendaId: params?.id,
           provou,
           updatedAt: Timestamp.now(),
         });
@@ -208,7 +208,7 @@ export default function EditarVendaPage() {
       }
 
       toast.success('Venda atualizada com sucesso!');
-      router.push(`/vendas/${params.id}`);
+      router.push(`/vendas/${params?.id}`);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao atualizar venda');
@@ -224,7 +224,7 @@ export default function EditarVendaPage() {
   return (
     <div>
       <div className="mb-8">
-        <Link href={`/vendas/${params.id}`}>
+        <Link href={`/vendas/${params?.id}`}>
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -464,7 +464,7 @@ export default function EditarVendaPage() {
           <Button type="submit" loading={loading} disabled={loading}>
             Salvar Alterações
           </Button>
-          <Link href={`/vendas/${params.id}`}>
+          <Link href={`/vendas/${params?.id}`}>
             <Button type="button" variant="secondary" disabled={loading}>
               Cancelar
             </Button>
