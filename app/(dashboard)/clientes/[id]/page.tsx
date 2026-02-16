@@ -21,14 +21,11 @@ export default function ClienteDetalhesPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const loadCliente = async () => {
-      if (params.id) {
-        await fetchCliente(params.id as string);
-      }
-    };
-    
-    loadCliente();
-  }, [params.id]); // Remove fetchCliente da dependência
+    if (params?.id) {
+      fetchCliente(params.id as string);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params?.id]);
 
   const fetchCliente = async (id: string) => {
     try {
