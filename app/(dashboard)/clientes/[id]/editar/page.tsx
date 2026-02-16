@@ -101,10 +101,10 @@ export default function EditarClientePage() {
         updateData.dataNascimento = data.dataNascimento;
       }
 
-      await updateDoc(doc(db, 'clientes', params.id as string), updateData);
+      await updateDoc(doc(db, 'clientes', params?.id as string), updateData);
 
       toast.success('Cliente atualizado com sucesso!');
-      router.push(`/clientes/${params.id}`);
+      router.push(`/clientes/${params?.id}`);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao atualizar cliente');
