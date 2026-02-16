@@ -20,10 +20,10 @@ export default function VendaDetalhesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (params.id) {
-      fetchVenda(params.id as string);
+    if (params?.id) {
+      fetchVenda(params?.id as string);
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const fetchVenda = async (id: string) => {
     try {
