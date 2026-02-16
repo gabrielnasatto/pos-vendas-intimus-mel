@@ -21,11 +21,14 @@ export default function ClienteDetalhesPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
-      fetchCliente(params.id as string);
-      fetchVendasDoCliente(params.id as string);
-    }
-  }, [params.id]);
+    const loadCliente = async () => {
+      if (params.id) {
+        await fetchCliente(params.id as string);
+      }
+    };
+    
+    loadCliente();
+  }, [params.id]); // Remove fetchCliente da dependência
 
   const fetchCliente = async (id: string) => {
     try {
