@@ -120,7 +120,7 @@ export default function EditarClientePage() {
   return (
     <div>
       <div className="mb-8">
-        <Link href={`/clientes/${params.id}`}>
+        <Link href={`/clientes/${params?.id}`}>
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -171,7 +171,7 @@ export default function EditarClientePage() {
           <Button type="submit" loading={loading} disabled={loading}>
             Salvar Alterações
           </Button>
-          <Link href={`/clientes/${params.id}`}>
+          <Link href={`/clientes/${params?.id}`}>
             <Button type="button" variant="secondary" disabled={loading}>
               Cancelar
             </Button>
