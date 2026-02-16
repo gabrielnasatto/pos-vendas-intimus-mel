@@ -21,11 +21,11 @@ export default function ClienteDetalhesPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
-      fetchCliente(params.id as string);
-      fetchVendasDoCliente(params.id as string);
+    if (params?.id) {
+      fetchCliente(params?.id as string);
+      fetchVendasDoCliente(params?.id as string);
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const fetchCliente = async (id: string) => {
     try {
