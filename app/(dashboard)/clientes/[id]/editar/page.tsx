@@ -43,10 +43,11 @@ export default function EditarClientePage() {
   });
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       fetchCliente(params.id as string);
     }
-  }, [params.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params?.id]);
 
   const fetchCliente = async (id: string) => {
     try {
