@@ -1,14 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Verificar método
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Verificar chave de segurança
   const apiKey = req.headers['x-api-key'];
   
   if (apiKey !== process.env.N8N_API_KEY) {
@@ -16,25 +13,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Buscar vendas pendentes
-    const vendasRef = collection(db, 'vendas');
-    const q = query(vendasRef, where('status', '==', 'pendente'));
-    const snapshot = await getDocs(q);
+    const vendasSnapshot = await adminDb
+      .collection('vendas')
+      .where('status', '==', 'pendente')
+      .get();
 
     const vendas = [];
 
-    for (const vendaDoc of snapshot.docs) {
+    for (const vendaDoc of vendasSnapshot.docs) {
       const vendaData: any = { id: vendaDoc.id, ...vendaDoc.data() };
 
-      // Buscar cliente
       if (vendaData.clienteId) {
         try {
-          const clienteDoc = await getDoc(doc(db, 'clientes', vendaData.clienteId));
-          if (clienteDoc.exists()) {
+          const clienteDoc = await adminDb.collection('clientes').doc(vendaData.clienteId).get();
+          if (clienteDoc.exists) {
             const clienteData = clienteDoc.data();
             vendaData.cliente = {
-              nome: clienteData.nome,
-              telefone: clienteData.telefone,
+              nome: clienteData?.nome || '',
+              telefone: clienteData?.telefone || '',
             };
           }
         } catch (error) {

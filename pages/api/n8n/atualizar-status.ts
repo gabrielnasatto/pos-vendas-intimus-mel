@@ -1,14 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Verificar método
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Verificar chave de segurança
   const apiKey = req.headers['x-api-key'];
   
   if (apiKey !== process.env.N8N_API_KEY) {
@@ -22,17 +20,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Atualizar venda
-    await updateDoc(doc(db, 'vendas', vendaId), {
+    const agora = FieldValue.serverTimestamp();
+
+    await adminDb.collection('vendas').doc(vendaId).update({
       status,
-      dataEnvio: Timestamp.now(),
+      dataEnvio: agora,
       erro: erro || null,
     });
 
-    // Atualizar cliente
-    await updateDoc(doc(db, 'clientes', clienteId), {
+    await adminDb.collection('clientes').doc(clienteId).update({
       status,
-      dataEnvio: Timestamp.now(),
+      dataEnvio: agora,
     });
 
     return res.status(200).json({ 
