@@ -387,7 +387,7 @@ export default function EditarVendaPage() {
                   className="w-5 h-5 text-primary-600 bg-burgundy-900 border-burgundy-800 rounded focus:ring-primary-500 focus:ring-offset-burgundy-950"
                 />
                 <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                  Cliente provou mas não comprou?
+                  Cliente provou na loja?
                 </span>
               </label>
             </div>

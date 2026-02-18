@@ -29,6 +29,7 @@ export default function NovaVendaPage() {
   // Dados da venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [novoProduto, setNovoProduto] = useState({ nome: '', valor: 0 });
+  const [valorInputProduto, setValorInputProduto] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [provou, setProva] = useState(false);
 
@@ -71,6 +72,50 @@ export default function NovaVendaPage() {
     if (novoProduto.nome && novoProduto.valor > 0) {
       setProdutos([...produtos, novoProduto]);
       setNovoProduto({ nome: '', valor: 0 });
+      setValorInputProduto('');
+    }
+  };
+
+  const handleValorProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValorInputProduto(e.target.value);
+  };
+
+  const handleBlurValor = () => {
+    let valor = valorInputProduto.trim();
+    
+    if (!valor) {
+      setNovoProduto({ ...novoProduto, valor: 0 });
+      setValorInputProduto('');
+      return;
+    }
+    
+    // Manter apenas números, vírgula e ponto
+    valor = valor.replace(/[^\d.,]/g, '');
+    
+    // Converter vírgula em ponto
+    valor = valor.replace(/,/g, '.');
+    
+    // Garantir apenas um ponto
+    const partes = valor.split('.');
+    if (partes.length > 2) {
+      valor = partes[0] + '.' + partes.slice(1).join('');
+    }
+    
+    const numeroValor = valor ? Number(valor) : 0;
+    setNovoProduto({ ...novoProduto, valor: numeroValor });
+    
+    // Exibir o valor formatado em reias
+    if (numeroValor > 0) {
+      setValorInputProduto(numeroValor.toFixed(2).replace('.', ','));
+    } else {
+      setValorInputProduto('');
+    }
+  };
+
+  const handleKeyDownProduto = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      adicionarProduto();
     }
   };
 
@@ -257,7 +302,7 @@ export default function NovaVendaPage() {
                   className="w-5 h-5 text-primary-600 bg-dark-800 border-dark-700 rounded focus:ring-primary-500 focus:ring-offset-dark-950"
                 />
                 <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                  Cliente provou mas não comprou?
+                  Cliente provou na loja?
                 </span>
               </label>
             </div>
@@ -274,13 +319,16 @@ export default function NovaVendaPage() {
                 placeholder="Nome do produto"
                 value={novoProduto.nome}
                 onChange={(e) => setNovoProduto({ ...novoProduto, nome: e.target.value })}
+                onKeyDown={handleKeyDownProduto}
                 className="flex-1"
               />
               <Input
-                type="number"
-                placeholder="Valor"
-                value={novoProduto.valor || ''}
-                onChange={(e) => setNovoProduto({ ...novoProduto, valor: Number(e.target.value) })}
+                type="text"
+                placeholder="Valor (ex: 10,50)"
+                value={valorInputProduto}
+                onChange={handleValorProdutoChange}
+                onBlur={handleBlurValor}
+                onKeyDown={handleKeyDownProduto}
                 className="w-32"
               />
               <Button type="button" onClick={adicionarProduto} size="sm">

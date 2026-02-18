@@ -27,34 +27,36 @@ export default function DashboardPage() {
     try {
       // Buscar clientes
       const clientesRef = collection(db, 'clientes');
-      const allClientes = await getDocs(clientesRef);
-      const total = allClientes.size;
-
-      const pendentes = allClientes.docs.filter(doc => doc.data().status === 'pendente').length;
-      const enviados = allClientes.docs.filter(doc => doc.data().status === 'enviado').length;
-      const erros = allClientes.docs.filter(doc => doc.data().status === 'erro').length;
+      const clientesSnapshot = await getDocs(clientesRef);
+      const totalClientes = clientesSnapshot.size;
 
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
-      const clientesHoje = allClientes.docs.filter(doc => {
+      
+      const clientesHoje = clientesSnapshot.docs.filter(doc => {
         const dataCadastro = doc.data().dataCadastro?.toDate();
         return dataCadastro >= hoje;
       }).length;
 
-      const taxaEnvio = total > 0 ? Math.round((enviados / total) * 100) : 0;
-
       // Buscar vendas
       const vendasRef = collection(db, 'vendas');
-      const allVendas = await getDocs(vendasRef);
-      const numVendas = allVendas.size;
+      const vendasSnapshot = await getDocs(vendasRef);
+      const numVendas = vendasSnapshot.size;
       
-      const vendasHoje = allVendas.docs.filter(doc => {
+      // ✅ CONTAR STATUS DAS VENDAS (não dos clientes!)
+      const pendentes = vendasSnapshot.docs.filter(doc => doc.data().status === 'pendente').length;
+      const enviados = vendasSnapshot.docs.filter(doc => doc.data().status === 'enviado').length;
+      const erros = vendasSnapshot.docs.filter(doc => doc.data().status === 'erro').length;
+      
+      const taxaEnvio = numVendas > 0 ? Math.round((enviados / numVendas) * 100) : 0;
+      
+      const vendasHoje = vendasSnapshot.docs.filter(doc => {
         const dataVenda = doc.data().dataVenda?.toDate();
-        return dataVenda >= hoje;
+        return dataVenda && dataVenda >= hoje;
       }).length;
 
       setStats({
-        totalClientes: total,
+        totalClientes,
         pendentes,
         enviados,
         erros,
@@ -204,7 +206,7 @@ export default function DashboardPage() {
           <div className="text-center p-4 bg-dark-800/50 rounded-xl border border-dark-700/30">
             <p className="text-sm text-gray-400 mb-2">Taxa de Sucesso</p>
             <p className="text-2xl font-bold text-white">
-              {stats.totalClientes > 0 ? Math.round(((stats.enviados) / stats.totalClientes) * 100) : 0}%
+              {totalVendas > 0 ? Math.round((stats.enviados / totalVendas) * 100) : 0}%
             </p>
             <p className="text-xs text-gray-500 mt-1">Eficiência</p>
           </div>

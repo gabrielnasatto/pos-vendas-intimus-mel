@@ -14,6 +14,7 @@ export function useVendas() {
     try {
       setLoading(true);
       
+      // REMOVA O WHERE - buscar TODAS as vendas
       const q = query(
         collection(db, 'vendas'),
         orderBy('dataVenda', 'desc')
