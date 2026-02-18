@@ -115,7 +115,14 @@ export default function NovaVendaPage() {
   const handleKeyDownProduto = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      adicionarProduto();
+      // Validar valor antes de adicionar
+      if (valorInputProduto) {
+        handleBlurValor();
+      }
+      // Adicionar após um pequeno delay para garantir que o valor foi processado
+      setTimeout(() => {
+        adicionarProduto();
+      }, 0);
     }
   };
 
