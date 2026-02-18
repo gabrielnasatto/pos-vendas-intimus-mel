@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, Users, ShoppingBag, Home, Menu, X } from 'lucide-react';
+import { useDispararEnvio } from '@/hooks/useDispararEnvio';
+import { LogOut, Users, ShoppingBag, Home, Menu, X, Send } from 'lucide-react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Image from 'next/image';
@@ -14,6 +15,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, userData, loading, signOut } = useAuth();
+  const { dispararEnvio, loading: loadingEnvio } = useDispararEnvio();
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -99,6 +101,20 @@ export default function DashboardLayout({
             })}
           </nav>
 
+          {/* Enviar Mensagens */}
+          <div className="p-4 border-t border-burgundy-800/30">
+            <Button
+              variant="primary"
+              className="w-full justify-center"
+              onClick={dispararEnvio}
+              loading={loadingEnvio}
+              disabled={loadingEnvio}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Enviar Mensagens
+            </Button>
+          </div>
+
           {/* Logout */}
           <div className="p-4 border-t border-burgundy-800/30">
             <Button
@@ -167,6 +183,25 @@ export default function DashboardLayout({
                   );
                 })}
               </nav>
+
+              {/* Enviar Mensagens Mobile */}
+              <div className="p-4 border-t border-burgundy-800/30">
+                <Button
+                  variant="primary"
+                  className="w-full justify-center"
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    dispararEnvio();
+                  }}
+                  loading={loadingEnvio}
+                  disabled={loadingEnvio}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar Mensagens
+                </Button>
+              </div>
+
+              {/* Logout Mobile */}
               <div className="p-4 border-t border-burgundy-800/30">
                 <Button
                   variant="ghost"

@@ -37,13 +37,13 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 9 * * *"
+              "expression": "0 9-17 * * 1-5"
             }
           ]
         }
       },
       "id": "c7acf5cd-9465-41b5-9306-5979ebd0e5d2",
-      "name": "Agendar 9h Diariamente",
+      "name": "Agendar 9h a 17h Seg-Sex",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -53,7 +53,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Processar resposta do Firebase\nconst items = [];\nconst input = $input.all();\n\nconsole.log('Input recebido:', JSON.stringify(input, null, 2));\n\nfor (const item of input) {\n  const data = item.json;\n  \n  // Verificar se é array diretamente\n  if (Array.isArray(data)) {\n    for (const doc of data) {\n      if (doc.document && doc.document.fields) {\n        const fields = doc.document.fields;\n        \n        items.push({\n          json: {\n            vendaId: doc.document.name.split('/').pop(),\n            clienteId: fields.clienteId?.stringValue || '',\n            provou: fields.provou?.booleanValue || false,\n            valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n            observacoes: fields.observacoes?.stringValue || '',\n          }\n        });\n      }\n    }\n  }\n  // Se vier como objeto com document\n  else if (data.document && data.document.fields) {\n    const fields = data.document.fields;\n    \n    items.push({\n      json: {\n        vendaId: data.document.name.split('/').pop(),\n        clienteId: fields.clienteId?.stringValue || '',\n        provou: fields.provou?.booleanValue || false,\n        valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n        observacoes: fields.observacoes?.stringValue || '',\n      }\n    });\n  }\n  // Se vier direto com fields\n  else if (data.fields) {\n    const fields = data.fields;\n    \n    items.push({\n      json: {\n        vendaId: data.name?.split('/').pop() || '',\n        clienteId: fields.clienteId?.stringValue || '',\n        provou: fields.provou?.booleanValue || false,\n        valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n        observacoes: fields.observacoes?.stringValue || '',\n      }\n    });\n  }\n}\n\nconsole.log('Items processados:', items.length);\n\n// Se não encontrou nada, retornar pelo menos 1 item vazio\nif (items.length === 0) {\n  return [{\n    json: {\n      erro: 'Nenhuma venda encontrada',\n      inputData: input\n    }\n  }];\n}\n\nreturn items;"
+        "jsCode": "// Processar resposta do Firebase\nconst items = [];\nconst input = $input.all();\n\nconsole.log('Input recebido:', JSON.stringify(input, null, 2));\n\nfor (const item of input) {\n  const data = item.json;\n  \n  // Verificar se é array diretamente\n  if (Array.isArray(data)) {\n    for (const doc of data) {\n      if (doc.document && doc.document.fields) {\n        const fields = doc.document.fields;\n        \n        items.push({\n          json: {\n            vendaId: doc.document.name.split('/').pop(),\n            clienteId: fields.clienteId?.stringValue || '',\n            dataVenda: fields.dataVenda?.timestampValue || '',\n            provou: fields.provou?.booleanValue || false,\n            valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n            observacoes: fields.observacoes?.stringValue || '',\n          }\n        });\n      }\n    }\n  }\n  // Se vier como objeto com document\n  else if (data.document && data.document.fields) {\n    const fields = data.document.fields;\n    \n    items.push({\n      json: {\n        vendaId: data.document.name.split('/').pop(),\n        clienteId: fields.clienteId?.stringValue || '',\n        dataVenda: fields.dataVenda?.timestampValue || '',\n        provou: fields.provou?.booleanValue || false,\n        valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n        observacoes: fields.observacoes?.stringValue || '',\n      }\n    });\n  }\n  // Se vier direto com fields\n  else if (data.fields) {\n    const fields = data.fields;\n    \n    items.push({\n      json: {\n        vendaId: data.name?.split('/').pop() || '',\n        clienteId: fields.clienteId?.stringValue || '',\n        dataVenda: fields.dataVenda?.timestampValue || '',\n        provou: fields.provou?.booleanValue || false,\n        valorTotal: parseInt(fields.valorTotal?.integerValue || 0),\n        observacoes: fields.observacoes?.stringValue || '',\n      }\n    });\n  }\n}\n\nconsole.log('Items processados:', items.length);\n\n// Se não encontrou nada, retornar pelo menos 1 item vazio\nif (items.length === 0) {\n  return [{\n    json: {\n      erro: 'Nenhuma venda encontrada',\n      inputData: input\n    }\n  }];\n}\n\nreturn items;"
       },
       "id": "d5b8a9fa-5b31-4930-a8c7-91f6fb14b4de",
       "name": "Processar Vendas",
@@ -61,6 +61,19 @@
       "typeVersion": 2,
       "position": [
         -1168,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validar se passaram 24h desde a venda\nconst items = [];\nconst agora = new Date();\n\nconsole.log('Iniciando validação de 24h...');\n\nfor (const item of $input.all()) {\n  const venda = item.json;\n  const vendaId = venda.vendaId;\n  \n  console.log(`Venda ${vendaId}:`, JSON.stringify(venda, null, 2));\n  \n  // Se não tiver dataVenda, bloquear (não enviar)\n  if (!venda.dataVenda) {\n    console.log(`Venda ${vendaId}: SEM dataVenda - BLOQUEADA`);\n    continue; // Pula esta venda\n  }\n  \n  // Converter timestamp do Firebase para Date\n  let dataVenda;\n  \n  // Firebase Timestamp (RFC 3339 format): \"2026-02-18T10:30:00Z\"\n  if (typeof venda.dataVenda === 'string') {\n    dataVenda = new Date(venda.dataVenda);\n  } \n  // Firebase Timestamp object com método toDate()\n  else if (venda.dataVenda?.toDate) {\n    dataVenda = venda.dataVenda.toDate();\n  } \n  // Unix timestamp em segundos\n  else if (typeof venda.dataVenda === 'number') {\n    // Verificar se é em segundos ou milissegundos\n    if (venda.dataVenda > 10000000000) {\n      dataVenda = new Date(venda.dataVenda);\n    } else {\n      dataVenda = new Date(venda.dataVenda * 1000);\n    }\n  } \n  else {\n    dataVenda = new Date(venda.dataVenda);\n  }\n  \n  // Validar se a data é válida\n  if (isNaN(dataVenda.getTime())) {\n    console.log(`Venda ${vendaId}: dataVenda inválida (${venda.dataVenda}) - BLOQUEADA`);\n    continue;\n  }\n  \n  const diferenca = agora - dataVenda;\n  const horas = diferenca / (1000 * 60 * 60);\n  \n  console.log(`Venda ${vendaId}: ${horas.toFixed(1)} horas desde ${dataVenda.toISOString()}`);\n  \n  // Verificar se passou 24h (86400000ms)\n  if (horas >= 24) {\n    console.log(`✓ Venda ${vendaId}: ${horas.toFixed(1)} horas - LIBERADA para envio`);\n    items.push(item);\n  } else {\n    console.log(`✗ Venda ${vendaId}: ${horas.toFixed(1)} horas - Aguardando ${(24 - horas).toFixed(1)}h`);\n  }\n}\n\nif (items.length === 0) {\n  console.log('❌ NENHUMA venda pronta para envio (todas < 24h)');\n  return [{\n    json: {\n      aviso: 'Nenhuma venda pronta - todas ainda estão no período de espera (< 24h)',\n      bloqueadosPor24h: true\n    }\n  }];\n}\n\nconsole.log(`✅ ${items.length} venda(s) pronta(s) para envio`);\nreturn items;"
+      },
+      "id": "validar-24h",
+      "name": "Validar 24h desde Compra",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
         1552
       ]
     },
@@ -326,7 +339,7 @@
   ],
   "pinData": {},
   "connections": {
-    "Agendar 9h Diariamente": {
+    "Agendar 9h a 17h Seg-Sex": {
       "main": [
         [
           {
@@ -349,6 +362,17 @@
       ]
     },
     "Processar Vendas": {
+      "main": [
+        [
+          {
+            "node": "Validar 24h desde Compra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar 24h desde Compra": {
       "main": [
         [
           {
