@@ -26,6 +26,7 @@ export default function NovaVendaPage() {
   const [telefone, setTelefone] = useState('');
   const [clienteExistente, setClienteExistente] = useState<Cliente | null>(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const [mostrarSugestoesTelefone, setMostrarSugestoesTelefone] = useState(false);
   
   // Dados da venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -38,18 +39,30 @@ export default function NovaVendaPage() {
     c.nome.toLowerCase().includes(nome.toLowerCase())
   );
 
+  const telefoneSomenteDigitos = telefone.replace(/\D/g, '');
+  const clientesFiltradosPorTelefone = telefoneSomenteDigitos.length >= 4
+    ? clientes.filter(c => c.telefone.replace(/\D/g, '').includes(telefoneSomenteDigitos))
+    : [];
+
   const selecionarCliente = (cliente: Cliente) => {
     setClienteExistente(cliente);
     setNome(cliente.nome);
     setTelefone(cliente.telefone);
     setDataNascimento(cliente.dataNascimento || '');
     setMostrarSugestoes(false);
+    setMostrarSugestoesTelefone(false);
   };
 
   const handleNomeChange = (value: string) => {
     setNome(value);
     setClienteExistente(null);
     setMostrarSugestoes(true);
+  };
+
+  const handleTelefoneChange = (value: string) => {
+    setTelefone(value);
+    setClienteExistente(null);
+    setMostrarSugestoesTelefone(true);
   };
 
   const adicionarProduto = () => {
@@ -141,6 +154,16 @@ export default function NovaVendaPage() {
 
       // Se cliente não existe, criar novo
       if (!clienteExistente) {
+        // Validar se telefone já existe na base
+        const telefoneDigitos = telefone.trim().replace(/\D/g, '');
+        const clienteComMesmoTelefone = clientes.find(
+          c => c.telefone.replace(/\D/g, '') === telefoneDigitos
+        );
+        if (clienteComMesmoTelefone) {
+          toast.error(`Número já cadastrado para ${clienteComMesmoTelefone.nome}. Selecione o cliente existente ou use outro número.`);
+          setLoading(false);
+          return;
+        }
         const clienteData: any = {
           dataCadastro: agora,
           nome: nome.trim(),
@@ -264,15 +287,37 @@ export default function NovaVendaPage() {
               </div>
             )}
 
-            <Input
-              label="Telefone (com DDD)"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              placeholder="47991234567"
-              required
-              helperText="Apenas números, com DDD. Ex: 47991234567"
-              disabled={clienteExistente !== null}
-            />
+            <div className="relative">
+              <Input
+                label="Telefone (com DDD)"
+                value={telefone}
+                onChange={(e) => handleTelefoneChange(e.target.value)}
+                onFocus={() => setMostrarSugestoesTelefone(true)}
+                onBlur={() => setTimeout(() => setMostrarSugestoesTelefone(false), 200)}
+                placeholder="47991234567"
+                required
+                helperText="Apenas números, com DDD. Ex: 47991234567"
+                disabled={clienteExistente !== null}
+              />
+
+              {mostrarSugestoesTelefone && !clienteExistente && clientesFiltradosPorTelefone.length > 0 && (
+                <div className="absolute z-10 w-full mt-2 glass-dark border border-dark-700 rounded-xl shadow-2xl max-h-60 overflow-auto">
+                  {clientesFiltradosPorTelefone.map((cliente) => (
+                    <button
+                      key={cliente.id}
+                      type="button"
+                      onClick={() => selecionarCliente(cliente)}
+                      className="w-full px-4 py-3 text-left hover:bg-dark-800/50 transition-colors border-b border-dark-700/50 last:border-0"
+                    >
+                      <div>
+                        <p className="font-medium text-white">{cliente.nome}</p>
+                        <p className="text-sm text-gray-400">{cliente.telefone}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Input
               label="Data de Nascimento"
