@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Manual-Trigger': 'true',
       },
       body: JSON.stringify({
         disparadoEm: agora.toISOString(),
