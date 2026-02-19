@@ -27,11 +27,10 @@ export function useDispararEnvio() {
         },
       });
 
-      const dados: ResultadoDisparo = await resposta.json();
-
       if (!resposta.ok) {
-        const mensagemErro = dados.detalhe || dados.mensagem || 'Erro ao executar envio';
-        
+        const dados = await resposta.json();
+        const mensagemErro = dados.mensagem || 'Erro ao executar envio';
+
         console.error('❌ Erro ao disparar:', {
           status: resposta.status,
           dados,
@@ -44,6 +43,8 @@ export function useDispararEnvio() {
 
         return dados;
       }
+
+      const dados: ResultadoDisparo = await resposta.json();
 
       toast.success(dados.mensagem || 'Envio iniciado com sucesso!', {
         duration: 3000,
@@ -77,10 +78,15 @@ export function useDispararEnvio() {
         method: 'GET',
       });
 
+      if (!resposta.ok) {
+        console.error('❌ Erro ao verificar disponibilidade. Status:', resposta.status);
+        return null;
+      }
+
       const dados = await resposta.json();
-      
+
       console.log('📋 Status de disponibilidade:', dados);
-      
+
       return dados;
     } catch (erro) {
       console.error('❌ Erro ao verificar disponibilidade:', erro);
