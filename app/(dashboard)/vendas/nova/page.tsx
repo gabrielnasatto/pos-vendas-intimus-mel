@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useClientes } from '@/hooks/useClientes';
+import { useDataNascimento } from '@/hooks/useDataNascimento';
 import { Timestamp, collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Button from '@/components/ui/Button';
@@ -17,12 +18,12 @@ import { validarTelefone, validarDataNascimento } from '@/lib/utils';
 export default function NovaVendaPage() {
   const router = useRouter();
   const { clientes } = useClientes();
+  const { dataNascimento, handleDataNascimentoChange, setDataNascimento } = useDataNascimento();
   const [loading, setLoading] = useState(false);
-  
+
   // Dados do cliente
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
   const [clienteExistente, setClienteExistente] = useState<Cliente | null>(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   
@@ -49,23 +50,6 @@ export default function NovaVendaPage() {
     setNome(value);
     setClienteExistente(null);
     setMostrarSugestoes(true);
-  };
-
-  const formatarDataNascimento = (value: string) => {
-    const apenasNumeros = value.replace(/\D/g, '');
-    
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros;
-    } else if (apenasNumeros.length <= 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    } else {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`;
-    }
-  };
-
-  const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatarDataNascimento(e.target.value);
-    setDataNascimento(formatted);
   };
 
   const adicionarProduto = () => {
@@ -293,7 +277,7 @@ export default function NovaVendaPage() {
             <Input
               label="Data de Nascimento"
               value={dataNascimento}
-              onChange={handleDataNascimentoChange}
+              onChange={(e) => handleDataNascimentoChange(e.target.value)}
               placeholder="DD/MM/AAAA"
               maxLength={10}
               helperText="Formato: DD/MM/AAAA (opcional)"

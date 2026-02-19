@@ -24,11 +24,6 @@ export function formatarTelefone(telefone: string): string {
   return telefone;
 }
 
-// Normalizar telefone para formato padrão
-export function normalizarTelefone(telefone: string): string {
-  return telefone.replace(/\D/g, '');
-}
-
 // Validar telefone brasileiro
 export function validarTelefone(telefone: string): boolean {
   const numero = telefone.replace(/\D/g, '');
@@ -73,63 +68,10 @@ export function formatarMoeda(valor: number): string {
   }).format(valor);
 }
 
-// Calcular horas desde cadastro
-export function calcularHorasDesde(timestamp: Timestamp): number {
-  const agora = new Date();
-  const dataCadastro = timestamp.toDate();
-  const diff = agora.getTime() - dataCadastro.getTime();
-  return Math.floor(diff / (1000 * 60 * 60));
-}
-
-// Verificar se passou 24h
-export function passou24h(timestamp: Timestamp): boolean {
-  return calcularHorasDesde(timestamp) >= 24;
-}
-
-// Obter cor do status
-export function getCorStatus(status: string): string {
-  const cores: Record<string, string> = {
-    pendente: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    enviado: 'bg-green-100 text-green-800 border-green-300',
-    erro: 'bg-red-100 text-red-800 border-red-300',
-    duplicado: 'bg-gray-100 text-gray-800 border-gray-300',
-  };
-  
-  return cores[status] || 'bg-gray-100 text-gray-800 border-gray-300';
-}
-
-// Obter emoji do status
-export function getEmojiStatus(status: string): string {
-  const emojis: Record<string, string> = {
-    pendente: '🟡',
-    enviado: '✅',
-    erro: '❌',
-    duplicado: '⚪',
-  };
-  
-  return emojis[status] || '⚪';
-}
-
-// Obter primeiro nome
-export function getPrimeiroNome(nomeCompleto: string): string {
-  return nomeCompleto.split(' ')[0];
-}
-
 // Validar email
 export function validarEmail(email: string): boolean {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
-}
-
-// Gerar ID único simples
-export function gerarId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Truncar texto
-export function truncarTexto(texto: string, tamanho: number = 50): string {
-  if (texto.length <= tamanho) return texto;
-  return texto.substring(0, tamanho) + '...';
 }
 
 // Calcular idade

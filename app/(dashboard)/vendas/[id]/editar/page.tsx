@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, Timestamp, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useClientes } from '@/hooks/useClientes';
+import { useDataNascimento } from '@/hooks/useDataNascimento';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -18,20 +19,20 @@ export default function EditarVendaPage() {
   const router = useRouter();
   const params = useParams();
   const { clientes } = useClientes();
+  const { dataNascimento: novoClienteDataNascimento, handleDataNascimentoChange, setDataNascimento: setNovoClienteDataNascimento } = useDataNascimento();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  
+
   // Cliente
   const [busca, setBusca] = useState('');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [clienteIdOriginal, setClienteIdOriginal] = useState('');
-  
+
   // Estados para cadastro de novo cliente
   const [mostrarFormNovoCliente, setMostrarFormNovoCliente] = useState(false);
   const [novoClienteNome, setNovoClienteNome] = useState('');
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
-  const [novoClienteDataNascimento, setNovoClienteDataNascimento] = useState('');
   
   // Venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -89,23 +90,6 @@ export default function EditarVendaPage() {
     if (clienteSelecionado && clienteSelecionado.nome !== value) {
       setClienteSelecionado(null);
     }
-  };
-
-  const formatarDataNascimento = (value: string) => {
-    const apenasNumeros = value.replace(/\D/g, '');
-    
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros;
-    } else if (apenasNumeros.length <= 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    } else {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`;
-    }
-  };
-
-  const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatarDataNascimento(e.target.value);
-    setNovoClienteDataNascimento(formatted);
   };
 
   const cadastrarNovoCliente = async () => {
@@ -345,7 +329,10 @@ export default function EditarVendaPage() {
                 <Input
                   label="Data de Nascimento"
                   value={novoClienteDataNascimento}
-                  onChange={handleDataNascimentoChange}
+                  onChange={(e) => {
+                    handleDataNascimentoChange(e.target.value);
+                    setNovoClienteDataNascimento(e.target.value);
+                  }}
                   placeholder="DD/MM/AAAA"
                   maxLength={10}
                   helperText="Formato: DD/MM/AAAA (opcional)"

@@ -19,8 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log('📞 Disparando webhook n8n:', n8nWebhookUrl);
-
     // Fazer requisição para o webhook do n8n
     const respostaWebhook = await fetch(n8nWebhookUrl, {
       method: 'POST',
@@ -33,24 +31,17 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    console.log('📊 Status da resposta:', respostaWebhook.status);
-    console.log('📊 Headers:', Object.fromEntries(respostaWebhook.headers.entries()));
-
     // Obter o texto da resposta primeiro
     const textoResposta = await respostaWebhook.text();
     
     if (!respostaWebhook.ok) {
-      console.error('❌ Erro na resposta do webhook:');
-      console.error('Status:', respostaWebhook.status);
-      console.error('Resposta:', textoResposta.substring(0, 500)); // Primeiros 500 caracteres
-
       return NextResponse.json(
         {
           sucesso: false,
           mensagem: 'Erro ao executar o fluxo de envio',
           status: respostaWebhook.status,
           statusText: respostaWebhook.statusText,
-          detalhe: textoResposta.startsWith('<') 
+          detalhe: textoResposta.startsWith('<')
             ? `Resposta HTML (possível erro ${respostaWebhook.status}). Verifique se a URL do webhook está correta.`
             : textoResposta,
         },
@@ -62,10 +53,7 @@ export async function POST(req: NextRequest) {
     let resultadoN8n;
     try {
       resultadoN8n = JSON.parse(textoResposta);
-      console.log('✅ Resposta do webhook:', resultadoN8n);
     } catch (erroJson) {
-      console.warn('⚠️ Resposta não é JSON válido, mas status foi OK');
-      console.warn('Resposta recebida:', textoResposta.substring(0, 200));
       resultadoN8n = { mensagem: 'Webhook executado com sucesso', resposta: textoResposta };
     }
 
@@ -79,9 +67,8 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (erro) {
-    console.error('❌ Erro ao processar disparo:', erro);
     const mensagemErro = erro instanceof Error ? erro.message : 'Erro desconhecido';
-    
+
     return NextResponse.json(
       {
         sucesso: false,

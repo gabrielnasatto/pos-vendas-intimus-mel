@@ -67,58 +67,6 @@ export function useClientes() {
     }
   };
 
-  // ✅ NOVO: Buscar cliente por telefone
-  const buscarClientePorTelefone = async (telefone: string): Promise<Cliente | null> => {
-    try {
-      const q = query(
-        collection(db, 'clientes'),
-        where('telefone', '==', telefone)
-      );
-      
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) return null;
-      
-      const docData = snapshot.docs[0];
-      return { id: docData.id, ...docData.data() } as Cliente;
-    } catch (error) {
-      console.error('Erro ao buscar cliente por telefone:', error);
-      return null;
-    }
-  };
-
-  // ✅ NOVO: Adicionar venda para cliente existente
-  const adicionarVendaParaCliente = async (clienteId: string, vendaData: Omit<Venda, 'id' | 'clienteId'>) => {
-    try {
-      const agora = Timestamp.now();
-      
-      const venda: Omit<Venda, 'id'> = {
-        ...vendaData,
-        clienteId,
-        dataVenda: agora,
-        createdAt: agora,
-      };
-      
-      const vendaRef = await addDoc(collection(db, 'vendas'), venda);
-      
-      // Atualizar cliente para status pendente novamente
-      await updateDoc(doc(db, 'clientes', clienteId), {
-        status: 'pendente',
-        vendaId: vendaRef.id,
-        updatedAt: serverTimestamp(),
-      });
-      
-      toast.success('Nova venda registrada para o cliente!');
-      fetchClientes();
-      
-      return vendaRef.id;
-    } catch (error) {
-      console.error('Erro ao adicionar venda:', error);
-      toast.error('Erro ao registrar venda');
-      throw error;
-    }
-  };
-
   const criarCliente = async (data: ClienteFormData) => {
     try {
       const agora = Timestamp.now();
@@ -214,8 +162,6 @@ export function useClientes() {
     loading,
     fetchClientes,
     getCliente,
-    buscarClientePorTelefone,
-    adicionarVendaParaCliente,
     criarCliente,
     atualizarCliente,
     deletarCliente,

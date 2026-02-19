@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { validarTelefone, validarDataNascimento } from '@/lib/utils';
+import { useDataNascimento } from '@/hooks/useDataNascimento';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
@@ -29,7 +30,7 @@ type FormData = z.infer<typeof schema>;
 export default function NovoClientePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [dataNascimento, setDataNascimento] = useState('');
+  const { dataNascimento, handleDataNascimentoChange, setDataNascimento } = useDataNascimento();
 
   const {
     register,
@@ -39,24 +40,6 @@ export default function NovoClientePage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
-
-  const formatarDataNascimento = (value: string) => {
-    const apenasNumeros = value.replace(/\D/g, '');
-    
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros;
-    } else if (apenasNumeros.length <= 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    } else {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`;
-    }
-  };
-
-  const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatarDataNascimento(e.target.value);
-    setDataNascimento(formatted);
-    setValue('dataNascimento', formatted);
-  };
 
   const verificarClienteExiste = async (telefone: string) => {
     try {
@@ -153,7 +136,10 @@ export default function NovoClientePage() {
             <Input
               label="Data de Nascimento"
               value={dataNascimento}
-              onChange={handleDataNascimentoChange}
+              onChange={(e) => {
+                handleDataNascimentoChange(e.target.value);
+                setValue('dataNascimento', e.target.value);
+              }}
               error={errors.dataNascimento?.message}
               placeholder="DD/MM/AAAA"
               maxLength={10}

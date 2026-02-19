@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { validarTelefone, validarDataNascimento } from '@/lib/utils';
+import { useDataNascimento } from '@/hooks/useDataNascimento';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
@@ -31,7 +32,7 @@ export default function EditarClientePage() {
   const params = useParams();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [dataNascimento, setDataNascimento] = useState('');
+  const { dataNascimento, handleDataNascimentoChange, setDataNascimento } = useDataNascimento();
 
   const {
     register,
@@ -67,24 +68,6 @@ export default function EditarClientePage() {
     } finally {
       setLoadingData(false);
     }
-  };
-
-  const formatarDataNascimento = (value: string) => {
-    const apenasNumeros = value.replace(/\D/g, '');
-    
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros;
-    } else if (apenasNumeros.length <= 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    } else {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`;
-    }
-  };
-
-  const handleDataNascimentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatarDataNascimento(e.target.value);
-    setDataNascimento(formatted);
-    setValue('dataNascimento', formatted);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -158,7 +141,10 @@ export default function EditarClientePage() {
             <Input
               label="Data de Nascimento"
               value={dataNascimento}
-              onChange={handleDataNascimentoChange}
+              onChange={(e) => {
+                handleDataNascimentoChange(e.target.value);
+                setValue('dataNascimento', e.target.value);
+              }}
               error={errors.dataNascimento?.message}
               placeholder="DD/MM/AAAA"
               maxLength={10}
