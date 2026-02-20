@@ -165,7 +165,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="text-sm text-gray-400">
-            {stats.enviados} de {stats.totalClientes} mensagens enviadas com sucesso
+            {stats.enviados} de {totalVendas} mensagens enviadas com sucesso
           </p>
         </div>
 
