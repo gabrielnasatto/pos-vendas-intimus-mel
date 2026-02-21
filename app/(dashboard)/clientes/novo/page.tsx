@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Timestamp, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useClientes } from '@/hooks/useClientes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -30,7 +29,8 @@ type FormData = z.infer<typeof schema>;
 export default function NovoClientePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { dataNascimento, handleDataNascimentoChange, setDataNascimento } = useDataNascimento();
+  const { clientes } = useClientes();
+  const { dataNascimento, handleDataNascimentoChange } = useDataNascimento();
 
   const {
     register,
@@ -43,49 +43,34 @@ export default function NovoClientePage() {
 
   const telefoneField = register('telefone');
 
-  const verificarClienteExiste = async (telefone: string) => {
-    try {
-      const q = query(
-        collection(db, 'clientes'),
-        where('telefone', '==', telefone)
-      );
-      const snapshot = await getDocs(q);
-      return !snapshot.empty;
-    } catch (error) {
-      console.error('Erro ao verificar cliente:', error);
-      return false;
-    }
-  };
-
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      
-      const clienteExiste = await verificarClienteExiste(data.telefone);
-      
+
+      const telefoneDigitos = data.telefone.replace(/\D/g, '');
+      const clienteExiste = clientes.find(
+        (c) => c.telefone.replace(/\D/g, '') === telefoneDigitos
+      );
+
       if (clienteExiste) {
         toast.error('Cliente com este telefone já está cadastrado!');
         setLoading(false);
         return;
       }
-      
-      const agora = Timestamp.now();
 
-      const clienteData: any = {
-        dataCadastro: agora,
-        nome: data.nome,
-        telefone: data.telefone,
-        provou: false,
-        status: 'pendente',
-        createdAt: agora,
-        updatedAt: agora,
-      };
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: data.nome,
+          telefone: data.telefone,
+          dataNascimento: data.dataNascimento || undefined,
+          provou: false,
+        }),
+      });
 
-      if (data.dataNascimento) {
-        clienteData.dataNascimento = data.dataNascimento;
-      }
-
-      await addDoc(collection(db, 'clientes'), clienteData);
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error);
 
       toast.success('Cliente cadastrado com sucesso!');
       router.push('/clientes');
