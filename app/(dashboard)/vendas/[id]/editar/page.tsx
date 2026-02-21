@@ -38,6 +38,7 @@ export default function EditarVendaPage() {
   // Venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [novoProduto, setNovoProduto] = useState({ nome: '', valor: 0 });
+  const [valorInputEditar, setValorInputEditar] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [provou, setProva] = useState(false);
 
@@ -143,6 +144,7 @@ export default function EditarVendaPage() {
     if (novoProduto.nome && novoProduto.valor > 0) {
       setProdutos([...produtos, novoProduto]);
       setNovoProduto({ nome: '', valor: 0 });
+      setValorInputEditar('');
     }
   };
 
@@ -328,9 +330,11 @@ export default function EditarVendaPage() {
                 <Input
                   label="Telefone (com DDD)"
                   value={novoClienteTelefone}
-                  onChange={(e) => setNovoClienteTelefone(e.target.value)}
+                  onChange={(e) => setNovoClienteTelefone(e.target.value.replace(/\D/g, ''))}
                   placeholder="47991234567"
                   required
+                  inputMode="numeric"
+                  maxLength={11}
                   helperText="Apenas números, com DDD. Ex: 47991234567"
                 />
                 <Input
@@ -401,10 +405,22 @@ export default function EditarVendaPage() {
               />
               <div className="flex gap-3">
                 <Input
-                  type="number"
-                  placeholder="Valor"
-                  value={novoProduto.valor || ''}
-                  onChange={(e) => setNovoProduto({ ...novoProduto, valor: Number(e.target.value) })}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="10,50"
+                  value={valorInputEditar}
+                  onChange={(e) => {
+                    const filtered = e.target.value.replace(/[^\d,]/g, '');
+                    setValorInputEditar(filtered);
+                    const numStr = filtered.replace(',', '.');
+                    const numValue = numStr ? parseFloat(numStr) : 0;
+                    setNovoProduto({ ...novoProduto, valor: isNaN(numValue) ? 0 : numValue });
+                  }}
+                  onBlur={() => {
+                    if (novoProduto.valor > 0) {
+                      setValorInputEditar(novoProduto.valor.toFixed(2).replace('.', ','));
+                    }
+                  }}
                   className="flex-1 sm:w-32 sm:flex-none"
                 />
                 <Button type="button" onClick={adicionarProduto} size="sm" className="shrink-0">

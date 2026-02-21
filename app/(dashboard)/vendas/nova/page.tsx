@@ -59,7 +59,8 @@ export default function NovaVendaPage() {
   };
 
   const handleTelefoneChange = (value: string) => {
-    setTelefone(value);
+    const soNumeros = value.replace(/\D/g, '');
+    setTelefone(soNumeros);
     setClienteExistente(null);
     setMostrarSugestoesTelefone(true);
   };
@@ -73,7 +74,8 @@ export default function NovaVendaPage() {
   };
 
   const handleValorProdutoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValorInputProduto(e.target.value);
+    const filtered = e.target.value.replace(/[^\d,]/g, '');
+    setValorInputProduto(filtered);
   };
 
   const handleBlurValor = () => {
@@ -265,6 +267,8 @@ export default function NovaVendaPage() {
                 onBlur={() => setTimeout(() => setMostrarSugestoesTelefone(false), 200)}
                 placeholder="47991234567"
                 required
+                inputMode="numeric"
+                maxLength={11}
                 helperText="Apenas números, com DDD. Ex: 47991234567"
                 disabled={clienteExistente !== null}
               />
@@ -329,7 +333,8 @@ export default function NovaVendaPage() {
               <div className="flex gap-3">
                 <Input
                   type="text"
-                  placeholder="Valor (ex: 10,50)"
+                  inputMode="decimal"
+                  placeholder="10,50"
                   value={valorInputProduto}
                   onChange={handleValorProdutoChange}
                   onBlur={handleBlurValor}

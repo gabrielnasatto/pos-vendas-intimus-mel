@@ -41,6 +41,8 @@ export default function NovoClientePage() {
     resolver: zodResolver(schema),
   });
 
+  const telefoneField = register('telefone');
+
   const verificarClienteExiste = async (telefone: string) => {
     try {
       const q = query(
@@ -126,10 +128,16 @@ export default function NovoClientePage() {
 
             <Input
               label="Telefone (com DDD)"
-              {...register('telefone')}
+              {...telefoneField}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+                telefoneField.onChange(e);
+              }}
               error={errors.telefone?.message}
               placeholder="47991234567"
               required
+              inputMode="numeric"
+              maxLength={11}
               helperText="Apenas números, com DDD. Ex: 47991234567"
             />
 
@@ -148,7 +156,7 @@ export default function NovoClientePage() {
 
             <div className="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4">
               <p className="text-sm text-primary-400">
-                💡 <strong>Dica:</strong> Após cadastrar o cliente, vá em "Vendas" → "Nova Venda" para registrar suas compras.
+                💡 <strong>Dica:</strong> Após cadastrar o cliente, vá em "Vendas" → "Nova Venda" para registrar suas vendas.
               </p>
             </div>
           </CardContent>

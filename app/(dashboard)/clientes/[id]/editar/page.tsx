@@ -41,6 +41,8 @@ export default function EditarClientePage() {
     resolver: zodResolver(schema),
   });
 
+  const telefoneField = register('telefone');
+
   useEffect(() => {
     if (params?.id) {
       fetchCliente(params.id as string);
@@ -138,10 +140,16 @@ export default function EditarClientePage() {
 
             <Input
               label="Telefone (com DDD)"
-              {...register('telefone')}
+              {...telefoneField}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+                telefoneField.onChange(e);
+              }}
               error={errors.telefone?.message}
               placeholder="47991234567"
               required
+              inputMode="numeric"
+              maxLength={11}
               helperText="Apenas números, com DDD. Ex: 47991234567"
             />
 
