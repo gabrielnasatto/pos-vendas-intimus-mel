@@ -5,8 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -19,10 +17,10 @@ import toast from 'react-hot-toast';
 const schema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   telefone: z.string().refine(validarTelefone, 'Telefone inválido (use DDD + número)'),
-  dataNascimento: z.string().optional().refine(
-    (val) => !val || validarDataNascimento(val),
-    'Data inválida (use DD/MM/AAAA)'
-  ),
+  dataNascimento: z
+    .string()
+    .optional()
+    .refine((val) => !val || validarDataNascimento(val), 'Data inválida (use DD/MM/AAAA)'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -45,21 +43,23 @@ export default function EditarClientePage() {
 
   useEffect(() => {
     if (params?.id) {
-      fetchCliente(params?.id as string);
+      fetchCliente(params.id as string);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const fetchCliente = async (id: string) => {
     try {
-      const clienteDoc = await getDoc(doc(db, 'clientes', id));
-      if (clienteDoc.exists()) {
-        const data = clienteDoc.data();
-        setValue('nome', data.nome);
-        setValue('telefone', data.telefone);
-        if (data.dataNascimento) {
-          setValue('dataNascimento', data.dataNascimento);
-          setDataNascimento(data.dataNascimento);
+      const res = await fetch(`/api/clientes/${id}`);
+      const data = await res.json();
+
+      if (data.success) {
+        const c = data.cliente;
+        setValue('nome', c.nome);
+        setValue('telefone', c.telefone);
+        if (c.dataNascimento) {
+          setValue('dataNascimento', c.dataNascimento);
+          setDataNascimento(c.dataNascimento);
         }
       }
     } catch (error) {
@@ -73,18 +73,25 @@ export default function EditarClientePage() {
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      
-      const updateData: any = {
+
+      const body: Record<string, any> = {
+        clienteId: params?.id as string,
         nome: data.nome,
         telefone: data.telefone,
-        updatedAt: Timestamp.now(),
       };
 
       if (data.dataNascimento) {
-        updateData.dataNascimento = data.dataNascimento;
+        body.dataNascimento = data.dataNascimento;
       }
 
-      await updateDoc(doc(db, 'clientes', params?.id as string), updateData);
+      const res = await fetch('/api/clientes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error);
 
       toast.success('Cliente atualizado com sucesso!');
       router.push(`/clientes/${params?.id}`);

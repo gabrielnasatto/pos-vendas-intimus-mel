@@ -1,10 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Venda, VendaCompleta } from '@/types';
+import { VendaCompleta } from '@/types';
 import toast from 'react-hot-toast';
+
+function toFakeTimestamp(dateStr: string | null | undefined): any {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return {
+    toDate: () => date,
+    seconds: Math.floor(date.getTime() / 1000),
+    nanoseconds: 0,
+  };
+}
+
+function parseVenda(raw: any): VendaCompleta {
+  return {
+    ...raw,
+    dataVenda: toFakeTimestamp(raw.dataVenda),
+    dataEnvio: raw.dataEnvio ? toFakeTimestamp(raw.dataEnvio) : undefined,
+    createdAt: toFakeTimestamp(raw.createdAt),
+  } as VendaCompleta;
+}
 
 export function useVendas() {
   const [vendas, setVendas] = useState<VendaCompleta[]>([]);
@@ -13,37 +30,13 @@ export function useVendas() {
   const fetchVendas = async () => {
     try {
       setLoading(true);
-      
-      // REMOVA O WHERE - buscar TODAS as vendas
-      const q = query(
-        collection(db, 'vendas'),
-        orderBy('dataVenda', 'desc')
-      );
 
-      const snapshot = await getDocs(q);
-      
-      const vendasPromises = snapshot.docs.map(async (vendaDoc) => {
-        const vendaData = { id: vendaDoc.id, ...vendaDoc.data() } as Venda;
-        
-        if (vendaData.clienteId) {
-          try {
-            const clienteDoc = await getDoc(doc(db, 'clientes', vendaData.clienteId));
-            if (clienteDoc.exists()) {
-              return {
-                ...vendaData,
-                nomeCliente: clienteDoc.data().nome,
-              } as VendaCompleta;
-            }
-          } catch (error) {
-            console.error('Erro ao buscar cliente:', error);
-          }
-        }
-        
-        return vendaData as VendaCompleta;
-      });
+      const res = await fetch('/api/vendas');
+      const data = await res.json();
 
-      const vendasData = await Promise.all(vendasPromises);
-      setVendas(vendasData);
+      if (!data.success) throw new Error(data.error || 'Erro ao buscar vendas');
+
+      setVendas((data.vendas as any[]).map(parseVenda));
     } catch (error) {
       console.error('Erro ao buscar vendas:', error);
     } finally {
@@ -51,12 +44,14 @@ export function useVendas() {
     }
   };
 
-  // ✅ NOVO: Deletar venda
   const deletarVenda = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'vendas', id));
+      const res = await fetch(`/api/vendas?vendaId=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Erro ao deletar venda');
+
       toast.success('Venda deletada com sucesso!');
-      fetchVendas(); // Recarregar lista
+      fetchVendas();
     } catch (error) {
       console.error('Erro ao deletar venda:', error);
       toast.error('Erro ao deletar venda');
@@ -64,12 +59,17 @@ export function useVendas() {
     }
   };
 
-  // ✅ NOVO: Atualizar status da venda
   const atualizarStatusVenda = async (id: string, status: string) => {
     try {
-      await updateDoc(doc(db, 'vendas', id), {
-        status,
+      const res = await fetch('/api/vendas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vendaId: id, status }),
       });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Erro ao atualizar status');
+
       toast.success('Status atualizado!');
       fetchVendas();
     } catch (error) {

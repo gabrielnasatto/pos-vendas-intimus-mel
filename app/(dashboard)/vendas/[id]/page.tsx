@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft, Calendar, User, ShoppingBag, DollarSign } from 'lucide-react';
 import { formatarData, formatarMoeda } from '@/lib/utils';
 import toast from 'react-hot-toast';
+
+function toFakeTimestamp(dateStr: string | null | undefined): any {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return { toDate: () => date };
+}
 
 export default function VendaDetalhesPage() {
   const params = useParams();
@@ -21,22 +25,30 @@ export default function VendaDetalhesPage() {
 
   useEffect(() => {
     if (params?.id) {
-      fetchVenda(params?.id as string);
+      fetchVenda(params.id as string);
     }
   }, [params?.id]);
 
   const fetchVenda = async (id: string) => {
     try {
-      const vendaDoc = await getDoc(doc(db, 'vendas', id));
-      if (vendaDoc.exists()) {
-        const vendaData: any = { id: vendaDoc.id, ...vendaDoc.data() };
-        setVenda(vendaData);
+      const res = await fetch(`/api/vendas?vendaId=${id}`);
+      const data = await res.json();
 
-        // Buscar cliente
-        if (vendaData.clienteId) {
-          const clienteDoc = await getDoc(doc(db, 'clientes', vendaData.clienteId));
-          if (clienteDoc.exists()) {
-            setCliente({ id: clienteDoc.id, ...clienteDoc.data() });
+      if (data.success) {
+        const v = data.venda;
+        const vendaFormatada = {
+          ...v,
+          dataVenda: toFakeTimestamp(v.dataVenda),
+          createdAt: toFakeTimestamp(v.createdAt),
+          dataEnvio: v.dataEnvio ? toFakeTimestamp(v.dataEnvio) : undefined,
+        };
+        setVenda(vendaFormatada);
+
+        if (v.clienteId) {
+          const clienteRes = await fetch(`/api/clientes/${v.clienteId}`);
+          const clienteData = await clienteRes.json();
+          if (clienteData.success) {
+            setCliente(clienteData.cliente);
           }
         }
       }
@@ -49,10 +61,13 @@ export default function VendaDetalhesPage() {
 
   const handleDelete = async () => {
     if (!venda) return;
-    
-    if (confirm(`Tem certeza que deseja deletar esta venda?`)) {
+
+    if (confirm('Tem certeza que deseja deletar esta venda?')) {
       try {
-        await deleteDoc(doc(db, 'vendas', venda.id));
+        const res = await fetch(`/api/vendas?vendaId=${venda.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+
         toast.success('Venda deletada com sucesso!');
         router.push('/vendas');
       } catch (error) {
@@ -110,7 +125,6 @@ export default function VendaDetalhesPage() {
                 <p className="font-medium text-white">{formatarData(venda.dataVenda)}</p>
               </div>
             </div>
-
             <div className="flex items-center">
               <DollarSign className="w-5 h-5 text-gray-400 mr-3" />
               <div>
@@ -118,7 +132,6 @@ export default function VendaDetalhesPage() {
                 <p className="font-medium text-white">{formatarMoeda(venda.valorTotal)}</p>
               </div>
             </div>
-
             <div className="flex items-center">
               <User className="w-5 h-5 text-gray-400 mr-3" />
               <div>
@@ -165,12 +178,17 @@ export default function VendaDetalhesPage() {
           {venda.produtos && venda.produtos.length > 0 ? (
             <div className="space-y-3">
               {venda.produtos.map((produto: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-burgundy-900/30 rounded-xl border border-burgundy-800/30">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-burgundy-900/30 rounded-xl border border-burgundy-800/30"
+                >
                   <div className="flex items-center">
                     <ShoppingBag className="w-5 h-5 text-primary-500 mr-3" />
                     <span className="text-white font-medium">{produto.nome}</span>
                   </div>
-                  <span className="text-primary-400 font-semibold">{formatarMoeda(produto.valor)}</span>
+                  <span className="text-primary-400 font-semibold">
+                    {formatarMoeda(produto.valor)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -192,10 +210,8 @@ export default function VendaDetalhesPage() {
       )}
 
       <div className="flex gap-4">
-        <Link href={`/vendas/${venda.id}/editar`}> {/* ✅ NOVO */}
-        <Button variant="secondary">
-            Editar Venda
-            </Button>
+        <Link href={`/vendas/${venda.id}/editar`}>
+          <Button variant="secondary">Editar Venda</Button>
         </Link>
         <Button variant="danger" onClick={handleDelete}>
           Deletar Venda

@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Users, Send, AlertCircle, TrendingUp, ShoppingBag, Clock } from 'lucide-react';
 import { Estatisticas } from '@/types';
 
@@ -25,47 +23,43 @@ export default function DashboardPage() {
 
   const fetchEstatisticas = async () => {
     try {
-      // Buscar clientes
-      const clientesRef = collection(db, 'clientes');
-      const clientesSnapshot = await getDocs(clientesRef);
-      const totalClientes = clientesSnapshot.size;
-
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
-      
-      const clientesHoje = clientesSnapshot.docs.filter(doc => {
-        const dataCadastro = doc.data().dataCadastro?.toDate();
-        return dataCadastro >= hoje;
+
+      const [clientesRes, vendasRes] = await Promise.all([
+        fetch('/api/clientes'),
+        fetch('/api/vendas'),
+      ]);
+
+      const [clientesData, vendasData] = await Promise.all([
+        clientesRes.json(),
+        vendasRes.json(),
+      ]);
+
+      const clientes: any[] = clientesData.success ? clientesData.clientes : [];
+      const vendas: any[] = vendasData.success ? vendasData.vendas : [];
+
+      const totalClientes = clientes.length;
+
+      const clientesHoje = clientes.filter((c) => {
+        if (!c.dataCadastro) return false;
+        return new Date(c.dataCadastro) >= hoje;
       }).length;
 
-      // Buscar vendas
-      const vendasRef = collection(db, 'vendas');
-      const vendasSnapshot = await getDocs(vendasRef);
-      const numVendas = vendasSnapshot.size;
-      
-      // ✅ CONTAR STATUS DAS VENDAS (não dos clientes!)
-      const pendentes = vendasSnapshot.docs.filter(doc => doc.data().status === 'pendente').length;
-      const enviados = vendasSnapshot.docs.filter(doc => doc.data().status === 'enviado').length;
-      const erros = vendasSnapshot.docs.filter(doc => doc.data().status === 'erro').length;
-      
+      const numVendas = vendas.length;
+      const pendentes = vendas.filter((v) => v.status === 'pendente').length;
+      const enviados = vendas.filter((v) => v.status === 'enviado').length;
+      const erros = vendas.filter((v) => v.status === 'erro').length;
       const taxaEnvio = numVendas > 0 ? Math.round((enviados / numVendas) * 100) : 0;
-      
-      const vendasHoje = vendasSnapshot.docs.filter(doc => {
-        const dataVenda = doc.data().dataVenda?.toDate();
-        return dataVenda && dataVenda >= hoje;
+
+      const vendasHojeCount = vendas.filter((v) => {
+        if (!v.dataVenda) return false;
+        return new Date(v.dataVenda) >= hoje;
       }).length;
 
-      setStats({
-        totalClientes,
-        pendentes,
-        enviados,
-        erros,
-        taxaEnvio,
-        clientesHoje,
-      });
-      
+      setStats({ totalClientes, pendentes, enviados, erros, taxaEnvio, clientesHoje });
       setTotalVendas(numVendas);
-      setVendasHoje(vendasHoje);
+      setVendasHoje(vendasHojeCount);
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
     } finally {
@@ -135,14 +129,19 @@ export default function DashboardPage() {
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {cards.map((card, index) => (
-          <div key={index} className="glass-dark p-6 rounded-2xl border border-dark-700/50 hover:border-dark-600/50 transition-all duration-300 group">
+          <div
+            key={index}
+            className="glass-dark p-6 rounded-2xl border border-dark-700/50 hover:border-dark-600/50 transition-all duration-300 group"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-xl bg-gradient-to-br ${card.gradient} shadow-lg`}>
                 <card.icon className="w-6 h-6 text-white" />
               </div>
             </div>
             <p className="text-sm text-gray-400 mb-1">{card.title}</p>
-            <p className={`text-3xl font-bold bg-gradient-to-r ${card.gradient} bg-clip-text text-transparent`}>
+            <p
+              className={`text-3xl font-bold bg-gradient-to-r ${card.gradient} bg-clip-text text-transparent`}
+            >
               {card.value}
             </p>
           </div>

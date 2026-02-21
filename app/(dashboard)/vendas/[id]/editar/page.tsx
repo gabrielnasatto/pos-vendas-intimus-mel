@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { doc, getDoc, updateDoc, Timestamp, addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useClientes } from '@/hooks/useClientes';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
 import Button from '@/components/ui/Button';
@@ -13,13 +11,16 @@ import { ArrowLeft, Plus, Trash2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { Produto, Cliente } from '@/types';
 import toast from 'react-hot-toast';
-import { validarTelefone, validarDataNascimento } from '@/lib/utils';
 
 export default function EditarVendaPage() {
   const router = useRouter();
   const params = useParams();
   const { clientes } = useClientes();
-  const { dataNascimento: novoClienteDataNascimento, handleDataNascimentoChange, setDataNascimento: setNovoClienteDataNascimento } = useDataNascimento();
+  const {
+    dataNascimento: novoClienteDataNascimento,
+    handleDataNascimentoChange,
+    setDataNascimento: setNovoClienteDataNascimento,
+  } = useDataNascimento();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -29,44 +30,45 @@ export default function EditarVendaPage() {
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [clienteIdOriginal, setClienteIdOriginal] = useState('');
 
-  // Estados para cadastro de novo cliente
+  // Novo cliente inline
   const [mostrarFormNovoCliente, setMostrarFormNovoCliente] = useState(false);
   const [novoClienteNome, setNovoClienteNome] = useState('');
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
-  
+
   // Venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [novoProduto, setNovoProduto] = useState({ nome: '', valor: 0 });
   const [observacoes, setObservacoes] = useState('');
   const [provou, setProva] = useState(false);
 
-  const clientesFiltrados = clientes.filter(c =>
+  const clientesFiltrados = clientes.filter((c) =>
     c.nome.toLowerCase().includes(busca.toLowerCase())
   );
 
   useEffect(() => {
     if (params?.id) {
-      fetchVenda(params?.id as string);
+      fetchVenda(params.id as string);
     }
   }, [params?.id]);
 
   const fetchVenda = async (id: string) => {
     try {
-      const vendaDoc = await getDoc(doc(db, 'vendas', id));
-      if (vendaDoc.exists()) {
-        const data = vendaDoc.data();
-        setProdutos(data.produtos || []);
-        setObservacoes(data.observacoes || '');
-        setProva(data.provou || false);
-        setClienteIdOriginal(data.clienteId || '');
+      const res = await fetch(`/api/vendas?vendaId=${id}`);
+      const data = await res.json();
 
-        // Buscar cliente atual
-        if (data.clienteId) {
-          const clienteDoc = await getDoc(doc(db, 'clientes', data.clienteId));
-          if (clienteDoc.exists()) {
-            const clienteData = { id: clienteDoc.id, ...clienteDoc.data() } as Cliente;
-            setClienteSelecionado(clienteData);
-            setBusca(clienteData.nome);
+      if (data.success) {
+        const v = data.venda;
+        setProdutos(v.produtos || []);
+        setObservacoes(v.observacoes || '');
+        setProva(v.provou || false);
+        setClienteIdOriginal(v.clienteId || '');
+
+        if (v.clienteId) {
+          const clienteRes = await fetch(`/api/clientes/${v.clienteId}`);
+          const clienteData = await clienteRes.json();
+          if (clienteData.success) {
+            setClienteSelecionado(clienteData.cliente as Cliente);
+            setBusca(clienteData.cliente.nome);
           }
         }
       }
@@ -100,36 +102,34 @@ export default function EditarVendaPage() {
 
     try {
       setLoading(true);
-      const agora = Timestamp.now();
 
-      const clienteData: any = {
-        dataCadastro: agora,
-        nome: novoClienteNome.trim(),
-        telefone: novoClienteTelefone.trim(),
-        provou: false,
-        status: 'pendente',
-        createdAt: agora,
-        updatedAt: agora,
-      };
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: novoClienteNome.trim(),
+          telefone: novoClienteTelefone.trim(),
+          dataNascimento: novoClienteDataNascimento || undefined,
+          provou: false,
+        }),
+      });
 
-      if (novoClienteDataNascimento) {
-        clienteData.dataNascimento = novoClienteDataNascimento;
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      // Buscar o cliente recém-criado para ter o objeto completo
+      const clienteRes = await fetch(`/api/clientes/${data.clienteId}`);
+      const clienteData = await clienteRes.json();
+
+      if (clienteData.success) {
+        setClienteSelecionado(clienteData.cliente as Cliente);
+        setBusca(clienteData.cliente.nome);
       }
 
-      const clienteRef = await addDoc(collection(db, 'clientes'), clienteData);
-      
-      const novoCliente: Cliente = {
-        id: clienteRef.id,
-        ...clienteData,
-      };
-
-      setClienteSelecionado(novoCliente);
-      setBusca(novoCliente.nome);
       setMostrarFormNovoCliente(false);
       setNovoClienteNome('');
       setNovoClienteTelefone('');
       setNovoClienteDataNascimento('');
-      
       toast.success('Novo cliente cadastrado!');
     } catch (error) {
       console.error(error);
@@ -163,30 +163,40 @@ export default function EditarVendaPage() {
 
       const valorTotal = produtos.reduce((sum, p) => sum + p.valor, 0);
 
-      await updateDoc(doc(db, 'vendas', params?.id as string), {
-        clienteId: clienteSelecionado.id,
-        valorTotal,
-        produtos,
-        observacoes,
-        provou,
-        updatedAt: Timestamp.now(),
+      const vendaRes = await fetch('/api/vendas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendaId: params?.id as string,
+          clienteId: clienteSelecionado.id,
+          valorTotal,
+          produtos,
+          observacoes,
+          provou,
+        }),
       });
 
-      // Se mudou o cliente, atualizar o status dos clientes
+      const vendaData = await vendaRes.json();
+      if (!vendaData.success) throw new Error(vendaData.error);
+
+      // Se mudou o cliente, atualizar ambos
       if (clienteSelecionado.id !== clienteIdOriginal) {
-        // Atualizar novo cliente
-        await updateDoc(doc(db, 'clientes', clienteSelecionado.id), {
-          status: 'pendente',
-          vendaId: params?.id,
-          provou,
-          updatedAt: Timestamp.now(),
+        await fetch('/api/clientes', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clienteId: clienteSelecionado.id,
+            status: 'pendente',
+            vendaId: params?.id,
+            provou,
+          }),
         });
 
-        // Remover referência do cliente antigo (se existir)
         if (clienteIdOriginal) {
-          await updateDoc(doc(db, 'clientes', clienteIdOriginal), {
-            vendaId: null,
-            updatedAt: Timestamp.now(),
+          await fetch('/api/clientes', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clienteId: clienteIdOriginal, vendaId: null }),
           });
         }
       }
@@ -238,7 +248,6 @@ export default function EditarVendaPage() {
                     placeholder="Digite o nome do cliente..."
                     required
                   />
-
                   {mostrarSugestoes && busca && clientesFiltrados.length > 0 && (
                     <div className="absolute z-10 w-full mt-2 glass-dark border border-burgundy-800 rounded-xl shadow-2xl max-h-60 overflow-auto">
                       {clientesFiltrados.map((cliente) => (
@@ -248,20 +257,17 @@ export default function EditarVendaPage() {
                           onClick={() => selecionarCliente(cliente)}
                           className="w-full px-4 py-3 text-left hover:bg-burgundy-900/50 transition-colors border-b border-burgundy-800/30 last:border-0"
                         >
-                          <div>
-                            <p className="font-medium text-white">{cliente.nome}</p>
-                            <p className="text-sm text-gray-400">{cliente.telefone}</p>
-                          </div>
+                          <p className="font-medium text-white">{cliente.nome}</p>
+                          <p className="text-sm text-gray-400">{cliente.telefone}</p>
                         </button>
                       ))}
                     </div>
                   )}
-
                   {mostrarSugestoes && busca && clientesFiltrados.length === 0 && (
                     <div className="absolute z-10 w-full mt-2 glass-dark border border-burgundy-800 rounded-xl shadow-2xl p-4">
                       <p className="text-gray-400 mb-3">Cliente não encontrado</p>
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         size="sm"
                         onClick={() => setMostrarFormNovoCliente(true)}
                       >
@@ -274,9 +280,13 @@ export default function EditarVendaPage() {
 
                 {clienteSelecionado && (
                   <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-                    <p className="text-green-400 font-medium">✓ Cliente selecionado: {clienteSelecionado.nome}</p>
+                    <p className="text-green-400 font-medium">
+                      ✓ Cliente selecionado: {clienteSelecionado.nome}
+                    </p>
                     {clienteSelecionado.id !== clienteIdOriginal && (
-                      <p className="text-yellow-400 text-sm mt-1">⚠️ Você está alterando o cliente desta venda</p>
+                      <p className="text-yellow-400 text-sm mt-1">
+                        ⚠️ Você está alterando o cliente desta venda
+                      </p>
                     )}
                     <button
                       type="button"
@@ -292,9 +302,9 @@ export default function EditarVendaPage() {
                 )}
 
                 {!clienteSelecionado && (
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
+                  <Button
+                    type="button"
+                    variant="secondary"
                     onClick={() => setMostrarFormNovoCliente(true)}
                     className="w-full"
                   >
@@ -308,7 +318,6 @@ export default function EditarVendaPage() {
                 <div className="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4 mb-4">
                   <p className="text-primary-400 font-medium">📝 Cadastrar Novo Cliente</p>
                 </div>
-
                 <Input
                   label="Nome Completo"
                   value={novoClienteNome}
@@ -316,7 +325,6 @@ export default function EditarVendaPage() {
                   placeholder="Maria Silva"
                   required
                 />
-
                 <Input
                   label="Telefone (com DDD)"
                   value={novoClienteTelefone}
@@ -325,7 +333,6 @@ export default function EditarVendaPage() {
                   required
                   helperText="Apenas números, com DDD. Ex: 47991234567"
                 />
-
                 <Input
                   label="Data de Nascimento"
                   value={novoClienteDataNascimento}
@@ -337,18 +344,17 @@ export default function EditarVendaPage() {
                   maxLength={10}
                   helperText="Formato: DD/MM/AAAA (opcional)"
                 />
-
                 <div className="flex gap-3">
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={cadastrarNovoCliente}
                     disabled={loading}
                     className="flex-1"
                   >
                     Salvar Cliente
                   </Button>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="secondary"
                     onClick={() => {
                       setMostrarFormNovoCliente(false);
@@ -364,7 +370,7 @@ export default function EditarVendaPage() {
                 </div>
               </>
             )}
-            
+
             <div>
               <label className="flex items-center space-x-3 cursor-pointer group">
                 <input
@@ -408,9 +414,15 @@ export default function EditarVendaPage() {
             {produtos.length > 0 && (
               <div className="space-y-3">
                 {produtos.map((produto, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-burgundy-900/30 rounded-xl border border-burgundy-800/30">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-burgundy-900/30 rounded-xl border border-burgundy-800/30"
+                  >
                     <span className="text-sm text-white">
-                      {produto.nome} - <span className="text-green-400 font-semibold">R$ {produto.valor.toFixed(2)}</span>
+                      {produto.nome} -{' '}
+                      <span className="text-green-400 font-semibold">
+                        R$ {produto.valor.toFixed(2)}
+                      </span>
                     </span>
                     <Button
                       type="button"
@@ -433,9 +445,7 @@ export default function EditarVendaPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Observações
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}

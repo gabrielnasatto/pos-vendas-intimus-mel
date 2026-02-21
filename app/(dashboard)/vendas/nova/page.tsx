@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useClientes } from '@/hooks/useClientes';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
-import { Timestamp, collection, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -27,7 +25,7 @@ export default function NovaVendaPage() {
   const [clienteExistente, setClienteExistente] = useState<Cliente | null>(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarSugestoesTelefone, setMostrarSugestoesTelefone] = useState(false);
-  
+
   // Dados da venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [novoProduto, setNovoProduto] = useState({ nome: '', valor: 0 });
@@ -35,14 +33,15 @@ export default function NovaVendaPage() {
   const [observacoes, setObservacoes] = useState('');
   const [provou, setProva] = useState(false);
 
-  const clientesFiltrados = clientes.filter(c =>
+  const clientesFiltrados = clientes.filter((c) =>
     c.nome.toLowerCase().includes(nome.toLowerCase())
   );
 
   const telefoneSomenteDigitos = telefone.replace(/\D/g, '');
-  const clientesFiltradosPorTelefone = telefoneSomenteDigitos.length >= 4
-    ? clientes.filter(c => c.telefone.replace(/\D/g, '').includes(telefoneSomenteDigitos))
-    : [];
+  const clientesFiltradosPorTelefone =
+    telefoneSomenteDigitos.length >= 4
+      ? clientes.filter((c) => c.telefone.replace(/\D/g, '').includes(telefoneSomenteDigitos))
+      : [];
 
   const selecionarCliente = (cliente: Cliente) => {
     setClienteExistente(cliente);
@@ -79,29 +78,18 @@ export default function NovaVendaPage() {
 
   const handleBlurValor = () => {
     let valor = valorInputProduto.trim();
-    
     if (!valor) {
       setNovoProduto({ ...novoProduto, valor: 0 });
       setValorInputProduto('');
       return;
     }
-    
-    // Manter apenas números, vírgula e ponto
-    valor = valor.replace(/[^\d.,]/g, '');
-    
-    // Converter vírgula em ponto
-    valor = valor.replace(/,/g, '.');
-    
-    // Garantir apenas um ponto
+    valor = valor.replace(/[^\d.,]/g, '').replace(/,/g, '.');
     const partes = valor.split('.');
     if (partes.length > 2) {
       valor = partes[0] + '.' + partes.slice(1).join('');
     }
-    
     const numeroValor = valor ? Number(valor) : 0;
     setNovoProduto({ ...novoProduto, valor: numeroValor });
-    
-    // Exibir o valor formatado em reias
     if (numeroValor > 0) {
       setValorInputProduto(numeroValor.toFixed(2).replace('.', ','));
     } else {
@@ -112,14 +100,8 @@ export default function NovaVendaPage() {
   const handleKeyDownProduto = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Validar valor antes de adicionar
-      if (valorInputProduto) {
-        handleBlurValor();
-      }
-      // Adicionar após um pequeno delay para garantir que o valor foi processado
-      setTimeout(() => {
-        adicionarProduto();
-      }, 0);
+      if (valorInputProduto) handleBlurValor();
+      setTimeout(() => adicionarProduto(), 0);
     }
   };
 
@@ -130,17 +112,14 @@ export default function NovaVendaPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
     if (!nome.trim()) {
       toast.error('Nome do cliente é obrigatório!');
       return;
     }
-
     if (!telefone.trim() || !validarTelefone(telefone)) {
       toast.error('Telefone inválido! Use formato: 47991234567');
       return;
     }
-
     if (dataNascimento && !validarDataNascimento(dataNascimento)) {
       toast.error('Data de nascimento inválida! Use formato: DD/MM/AAAA');
       return;
@@ -148,65 +127,58 @@ export default function NovaVendaPage() {
 
     try {
       setLoading(true);
-      const agora = Timestamp.now();
 
       let clienteId: string;
 
-      // Se cliente não existe, criar novo
       if (!clienteExistente) {
-        // Validar se telefone já existe na base
+        // Verificar duplicidade de telefone
         const telefoneDigitos = telefone.trim().replace(/\D/g, '');
         const clienteComMesmoTelefone = clientes.find(
-          c => c.telefone.replace(/\D/g, '') === telefoneDigitos
+          (c) => c.telefone.replace(/\D/g, '') === telefoneDigitos
         );
         if (clienteComMesmoTelefone) {
-          toast.error(`Número já cadastrado para ${clienteComMesmoTelefone.nome}. Selecione o cliente existente ou use outro número.`);
+          toast.error(
+            `Número já cadastrado para ${clienteComMesmoTelefone.nome}. Selecione o cliente existente ou use outro número.`
+          );
           setLoading(false);
           return;
         }
-        const clienteData: any = {
-          dataCadastro: agora,
-          nome: nome.trim(),
-          telefone: telefone.trim(),
-          provou: false,
-          status: 'pendente',
-          createdAt: agora,
-          updatedAt: agora,
-        };
 
-        if (dataNascimento) {
-          clienteData.dataNascimento = dataNascimento;
-        }
-
-        const clienteRef = await addDoc(collection(db, 'clientes'), clienteData);
-        clienteId = clienteRef.id;
+        // Criar novo cliente
+        const clienteRes = await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome: nome.trim(),
+            telefone: telefone.trim(),
+            dataNascimento: dataNascimento || undefined,
+            provou: false,
+          }),
+        });
+        const clienteData = await clienteRes.json();
+        if (!clienteData.success) throw new Error(clienteData.error);
+        clienteId = clienteData.clienteId;
         toast.success('Novo cliente cadastrado!');
       } else {
         clienteId = clienteExistente.id;
       }
 
-      // Criar venda (mesmo sem produtos)
+      // Criar venda
       const valorTotal = produtos.reduce((sum, p) => sum + p.valor, 0);
-
-      const vendaRef = await addDoc(collection(db, 'vendas'), {
-        dataVenda: agora,
-        valorTotal,
-        produtos,
-        vendedora: 'Sistema',
-        clienteId,
-        observacoes,
-        status: 'pendente',
-        provou,
-        createdAt: agora,
+      const vendaRes = await fetch('/api/vendas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId,
+          valorTotal,
+          produtos,
+          observacoes,
+          provou,
+          vendedora: 'Sistema',
+        }),
       });
-
-      // Atualizar cliente
-      await updateDoc(doc(db, 'clientes', clienteId), {
-        status: 'pendente',
-        vendaId: vendaRef.id,
-        provou,
-        updatedAt: agora,
-      });
+      const vendaData = await vendaRes.json();
+      if (!vendaData.success) throw new Error(vendaData.error);
 
       toast.success('Venda registrada com sucesso!');
       router.push('/vendas');
@@ -249,7 +221,6 @@ export default function NovaVendaPage() {
                 placeholder="Digite o nome do cliente..."
                 required
               />
-
               {mostrarSugestoes && nome && clientesFiltrados.length > 0 && !clienteExistente && (
                 <div className="absolute z-10 w-full mt-2 glass-dark border border-dark-700 rounded-xl shadow-2xl max-h-60 overflow-auto">
                   {clientesFiltrados.map((cliente) => (
@@ -259,10 +230,8 @@ export default function NovaVendaPage() {
                       onClick={() => selecionarCliente(cliente)}
                       className="w-full px-4 py-3 text-left hover:bg-dark-800/50 transition-colors border-b border-dark-700/50 last:border-0"
                     >
-                      <div>
-                        <p className="font-medium text-white">{cliente.nome}</p>
-                        <p className="text-sm text-gray-400">{cliente.telefone}</p>
-                      </div>
+                      <p className="font-medium text-white">{cliente.nome}</p>
+                      <p className="text-sm text-gray-400">{cliente.telefone}</p>
                     </button>
                   ))}
                 </div>
@@ -299,24 +268,23 @@ export default function NovaVendaPage() {
                 helperText="Apenas números, com DDD. Ex: 47991234567"
                 disabled={clienteExistente !== null}
               />
-
-              {mostrarSugestoesTelefone && !clienteExistente && clientesFiltradosPorTelefone.length > 0 && (
-                <div className="absolute z-10 w-full mt-2 glass-dark border border-dark-700 rounded-xl shadow-2xl max-h-60 overflow-auto">
-                  {clientesFiltradosPorTelefone.map((cliente) => (
-                    <button
-                      key={cliente.id}
-                      type="button"
-                      onClick={() => selecionarCliente(cliente)}
-                      className="w-full px-4 py-3 text-left hover:bg-dark-800/50 transition-colors border-b border-dark-700/50 last:border-0"
-                    >
-                      <div>
+              {mostrarSugestoesTelefone &&
+                !clienteExistente &&
+                clientesFiltradosPorTelefone.length > 0 && (
+                  <div className="absolute z-10 w-full mt-2 glass-dark border border-dark-700 rounded-xl shadow-2xl max-h-60 overflow-auto">
+                    {clientesFiltradosPorTelefone.map((cliente) => (
+                      <button
+                        key={cliente.id}
+                        type="button"
+                        onClick={() => selecionarCliente(cliente)}
+                        className="w-full px-4 py-3 text-left hover:bg-dark-800/50 transition-colors border-b border-dark-700/50 last:border-0"
+                      >
                         <p className="font-medium text-white">{cliente.nome}</p>
                         <p className="text-sm text-gray-400">{cliente.telefone}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
 
             <Input
@@ -375,9 +343,15 @@ export default function NovaVendaPage() {
             {produtos.length > 0 && (
               <div className="space-y-3">
                 {produtos.map((produto, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-dark-800/50 rounded-xl border border-dark-700/50">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-dark-800/50 rounded-xl border border-dark-700/50"
+                  >
                     <span className="text-sm text-white">
-                      {produto.nome} - <span className="text-green-400 font-semibold">R$ {produto.valor.toFixed(2)}</span>
+                      {produto.nome} -{' '}
+                      <span className="text-green-400 font-semibold">
+                        R$ {produto.valor.toFixed(2)}
+                      </span>
                     </span>
                     <Button
                       type="button"
@@ -400,9 +374,7 @@ export default function NovaVendaPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Observações
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}

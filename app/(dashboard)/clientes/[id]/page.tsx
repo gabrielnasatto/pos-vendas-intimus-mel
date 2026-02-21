@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Cliente, Venda } from '@/types';
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft, Phone, Calendar, ShoppingBag, Plus, Edit } from 'lucide-react';
 import { formatarData, formatarTelefone, calcularIdade, formatarMoeda } from '@/lib/utils';
 import toast from 'react-hot-toast';
+
+function toFakeTimestamp(dateStr: string | null | undefined): any {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return { toDate: () => date };
+}
 
 export default function ClienteDetalhesPage() {
   const params = useParams();
@@ -22,16 +26,24 @@ export default function ClienteDetalhesPage() {
 
   useEffect(() => {
     if (params?.id) {
-      fetchCliente(params?.id as string);
-      fetchVendasDoCliente(params?.id as string);
+      fetchCliente(params.id as string);
+      fetchVendasDoCliente(params.id as string);
     }
   }, [params?.id]);
 
   const fetchCliente = async (id: string) => {
     try {
-      const clienteDoc = await getDoc(doc(db, 'clientes', id));
-      if (clienteDoc.exists()) {
-        setCliente({ id: clienteDoc.id, ...clienteDoc.data() } as Cliente);
+      const res = await fetch(`/api/clientes/${id}`);
+      const data = await res.json();
+      if (data.success) {
+        const raw = data.cliente;
+        setCliente({
+          ...raw,
+          dataCadastro: toFakeTimestamp(raw.dataCadastro),
+          dataEnvio: raw.dataEnvio ? toFakeTimestamp(raw.dataEnvio) : undefined,
+          createdAt: toFakeTimestamp(raw.createdAt),
+          updatedAt: toFakeTimestamp(raw.updatedAt),
+        } as Cliente);
       }
     } catch (error) {
       console.error('Erro ao buscar cliente:', error);
@@ -42,16 +54,18 @@ export default function ClienteDetalhesPage() {
 
   const fetchVendasDoCliente = async (clienteId: string) => {
     try {
-      const q = query(
-        collection(db, 'vendas'),
-        where('clienteId', '==', clienteId)
-      );
-      const snapshot = await getDocs(q);
-      const vendasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Venda[];
-      setVendas(vendasData);
+      const res = await fetch(`/api/vendas?clienteId=${clienteId}`);
+      const data = await res.json();
+      if (data.success) {
+        setVendas(
+          (data.vendas as any[]).map((v: any) => ({
+            ...v,
+            dataVenda: toFakeTimestamp(v.dataVenda),
+            createdAt: toFakeTimestamp(v.createdAt),
+            dataEnvio: v.dataEnvio ? toFakeTimestamp(v.dataEnvio) : undefined,
+          })) as Venda[]
+        );
+      }
     } catch (error) {
       console.error('Erro ao buscar vendas:', error);
     }
@@ -59,26 +73,20 @@ export default function ClienteDetalhesPage() {
 
   const handleDelete = async () => {
     if (!cliente) return;
-    
-    if (confirm(`Tem certeza que deseja deletar o cliente "${cliente.nome}"?\n\nAtenção: Todas as vendas vinculadas também serão removidas!`)) {
+
+    if (
+      confirm(
+        `Tem certeza que deseja deletar o cliente "${cliente.nome}"?\n\nAtenção: Todas as vendas vinculadas também serão removidas!`
+      )
+    ) {
       try {
         setDeleting(true);
-        
-        // Buscar e deletar TODAS as vendas do cliente
-        const vendasRef = collection(db, 'vendas');
-        const q = query(vendasRef, where('clienteId', '==', cliente.id));
-        const vendasSnapshot = await getDocs(q);
-        
-        // Deletar cada venda encontrada
-        const deletePromises = vendasSnapshot.docs.map(vendaDoc => 
-          deleteDoc(doc(db, 'vendas', vendaDoc.id))
-        );
-        
-        await Promise.all(deletePromises);
-        
-        // Deletar cliente
-        await deleteDoc(doc(db, 'clientes', cliente.id));
-        
+
+        const res = await fetch(`/api/clientes?clienteId=${cliente.id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error);
+
         toast.success('Cliente e vendas deletados com sucesso!');
         router.push('/clientes');
       } catch (error) {
@@ -197,8 +205,8 @@ export default function ClienteDetalhesPage() {
                 Registrar Nova Venda
               </Button>
             </Link>
-            <Button 
-              variant="danger" 
+            <Button
+              variant="danger"
               onClick={handleDelete}
               loading={deleting}
               disabled={deleting}
@@ -228,7 +236,10 @@ export default function ClienteDetalhesPage() {
           ) : (
             <div className="space-y-3">
               {vendas.map((venda) => (
-                <div key={venda.id} className="border border-burgundy-800/30 rounded-xl p-4 hover:bg-burgundy-900/30 transition-colors">
+                <div
+                  key={venda.id}
+                  className="border border-burgundy-800/30 rounded-xl p-4 hover:bg-burgundy-900/30 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-gray-400">{formatarData(venda.dataVenda)}</span>
                     <span className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
@@ -236,7 +247,10 @@ export default function ClienteDetalhesPage() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-300">
-                    <strong>Produtos:</strong> {venda.produtos.length > 0 ? venda.produtos.map(p => p.nome).join(', ') : 'Sem produtos'}
+                    <strong>Produtos:</strong>{' '}
+                    {venda.produtos.length > 0
+                      ? venda.produtos.map((p) => p.nome).join(', ')
+                      : 'Sem produtos'}
                   </div>
                   {venda.observacoes && (
                     <div className="text-sm text-gray-400 mt-2">

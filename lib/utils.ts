@@ -31,32 +31,40 @@ export function validarTelefone(telefone: string): boolean {
 }
 
 // Formatar data do Firebase Timestamp
-export function formatarData(timestamp: Timestamp | Date | string): string {
+export function formatarData(timestamp: Timestamp | Date | string | null | undefined): string {
+  if (!timestamp) return '-';
   let date: Date;
-  
+
   if (timestamp instanceof Timestamp) {
     date = timestamp.toDate();
   } else if (typeof timestamp === 'string') {
     date = parseISO(timestamp);
+  } else if (typeof timestamp === 'object' && 'toDate' in timestamp) {
+    date = (timestamp as any).toDate();
   } else {
-    date = timestamp;
+    date = timestamp as Date;
   }
-  
+
+  if (!date || isNaN(date.getTime())) return '-';
   return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
 }
 
 // Formatar apenas data (sem hora)
-export function formatarDataSimples(timestamp: Timestamp | Date | string): string {
+export function formatarDataSimples(timestamp: Timestamp | Date | string | null | undefined): string {
+  if (!timestamp) return '-';
   let date: Date;
-  
+
   if (timestamp instanceof Timestamp) {
     date = timestamp.toDate();
   } else if (typeof timestamp === 'string') {
     date = parseISO(timestamp);
+  } else if (typeof timestamp === 'object' && 'toDate' in timestamp) {
+    date = (timestamp as any).toDate();
   } else {
-    date = timestamp;
+    date = timestamp as Date;
   }
-  
+
+  if (!date || isNaN(date.getTime())) return '-';
   return format(date, 'dd/MM/yyyy', { locale: ptBR });
 }
 
