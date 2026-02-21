@@ -124,14 +124,14 @@ export default function ClienteDetalhesPage() {
             Voltar
           </Button>
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
               {cliente.nome}
             </h1>
-            <p className="text-gray-400 mt-2">Detalhes e histórico do cliente</p>
+            <p className="text-gray-400 mt-2 text-sm sm:text-base">Detalhes e histórico do cliente</p>
           </div>
-          <Link href={`/clientes/${cliente.id}/editar`}>
+          <Link href={`/clientes/${cliente.id}/editar`} className="self-start sm:self-auto">
             <Button variant="secondary">
               <Edit className="w-4 h-4 mr-2" />
               Editar

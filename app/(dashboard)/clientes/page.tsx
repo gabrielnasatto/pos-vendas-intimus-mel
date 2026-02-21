@@ -38,10 +38,10 @@ export default function ClientesPage() {
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
             Clientes
           </h1>
-          <p className="text-gray-400 mt-2">Lista de todos os clientes cadastrados</p>
+          <p className="text-gray-400 mt-2 text-sm sm:text-base">Lista de todos os clientes cadastrados</p>
         </div>
         <Link href="/clientes/novo">
           <Button>
@@ -111,16 +111,16 @@ export default function ClientesPage() {
               </div>
               
               <div className="flex gap-2">
-                <Link href={`/clientes/${cliente.id}/editar`} className="flex-1"> {/* ✅ NOVO */}
+                <Link href={`/clientes/${cliente.id}/editar`} className="flex-1">
                   <Button size="sm" variant="secondary" className="w-full">
-                    <Edit className="w-4 h-4 mr-2" />
+                    <Edit className="w-4 h-4 mr-1.5" />
                     Editar
                   </Button>
                 </Link>
                 <Link href={`/clientes/${cliente.id}`} className="flex-1">
                   <Button size="sm" variant="secondary" className="w-full">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver Detalhes
+                    <Eye className="w-4 h-4 mr-1.5" />
+                    Ver
                   </Button>
                 </Link>
                 <Button

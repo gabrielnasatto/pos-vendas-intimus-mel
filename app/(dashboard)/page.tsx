@@ -120,10 +120,10 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
           Dashboard
         </h1>
-        <p className="text-gray-400 mt-2">Visão geral do sistema de pós-vendas e envios</p>
+        <p className="text-gray-400 mt-2 text-sm sm:text-base">Visão geral do sistema de pós-vendas e envios</p>
       </div>
 
       {/* Cards de Estatísticas */}

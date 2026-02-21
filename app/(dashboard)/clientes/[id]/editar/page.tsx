@@ -116,10 +116,10 @@ export default function EditarClientePage() {
             Voltar
           </Button>
         </Link>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
           Editar Cliente
         </h1>
-        <p className="text-gray-400 mt-2">Atualize os dados do cliente</p>
+        <p className="text-gray-400 mt-2 text-sm sm:text-base">Atualize os dados do cliente</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl">
@@ -160,12 +160,12 @@ export default function EditarClientePage() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button type="submit" loading={loading} disabled={loading}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button type="submit" loading={loading} disabled={loading} className="sm:w-auto">
             Salvar Alterações
           </Button>
-          <Link href={`/clientes/${params?.id}`}>
-            <Button type="button" variant="secondary" disabled={loading}>
+          <Link href={`/clientes/${params?.id}`} className="sm:w-auto">
+            <Button type="button" variant="secondary" disabled={loading} className="w-full">
               Cancelar
             </Button>
           </Link>

@@ -101,12 +101,12 @@ export default function VendaDetalhesPage() {
             Voltar
           </Button>
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
               Detalhes da Venda
             </h1>
-            <p className="text-gray-400 mt-2">Informações completas</p>
+            <p className="text-gray-400 mt-2 text-sm sm:text-base">Informações completas</p>
           </div>
           <Badge status={venda.status || 'pendente'} />
         </div>
@@ -209,11 +209,11 @@ export default function VendaDetalhesPage() {
         </Card>
       )}
 
-      <div className="flex gap-4">
-        <Link href={`/vendas/${venda.id}/editar`}>
-          <Button variant="secondary">Editar Venda</Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Link href={`/vendas/${venda.id}/editar`} className="sm:w-auto">
+          <Button variant="secondary" className="w-full">Editar Venda</Button>
         </Link>
-        <Button variant="danger" onClick={handleDelete}>
+        <Button variant="danger" onClick={handleDelete} className="sm:w-auto">
           Deletar Venda
         </Button>
       </div>

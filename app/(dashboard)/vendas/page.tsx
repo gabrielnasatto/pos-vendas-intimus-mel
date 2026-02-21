@@ -38,10 +38,10 @@ export default function VendasPage() {
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
             Vendas
           </h1>
-          <p className="text-gray-400 mt-2">Histórico de todas as vendas realizadas</p>
+          <p className="text-gray-400 mt-2 text-sm sm:text-base">Histórico de todas as vendas realizadas</p>
         </div>
         <Link href="/vendas/nova">
           <Button>
@@ -65,7 +65,75 @@ export default function VendasPage() {
         </div>
       </div>
 
-      <div className="glass-dark rounded-2xl border border-burgundy-800/30 overflow-hidden">
+      {/* Mobile: Cards */}
+      <div className="md:hidden space-y-3">
+        {vendasFiltradas.length === 0 ? (
+          <div className="glass-dark p-10 rounded-2xl border border-burgundy-800/30 text-center">
+            {busca ? (
+              <>
+                <p className="text-gray-400 mb-4">Nenhuma venda encontrada com "{busca}"</p>
+                <Button onClick={() => setBusca('')} size="sm" variant="secondary">
+                  Limpar Busca
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-400 mb-4">Nenhuma venda registrada ainda.</p>
+                <Link href="/vendas/nova">
+                  <Button size="sm">Registrar Primeira Venda</Button>
+                </Link>
+              </>
+            )}
+          </div>
+        ) : (
+          vendasFiltradas.map((venda: any) => (
+            <div key={venda.id} className="glass-dark rounded-2xl border border-burgundy-800/30 p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="font-medium text-white truncate">
+                    {venda.nomeCliente || 'Cliente não encontrado'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatarData(venda.dataVenda)}</p>
+                </div>
+                <Badge status={venda.status || 'pendente'} />
+              </div>
+              {venda.produtos.length > 0 && (
+                <p className="text-sm text-gray-400 mb-3 line-clamp-1">
+                  {venda.produtos.map((p: any) => p.nome).join(', ')}
+                </p>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-base font-semibold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                  {formatarMoeda(venda.valorTotal)}
+                </span>
+                <div className="flex gap-1">
+                  <Link href={`/vendas/${venda.id}/editar`}>
+                    <Button size="sm" variant="ghost" className="hover:bg-primary-500/10 hover:text-primary-400">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Link href={`/vendas/${venda.id}`}>
+                    <Button size="sm" variant="ghost">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDelete(venda.id, venda.nomeCliente || 'Cliente')}
+                    className="hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: Tabela */}
+      <div className="hidden md:block glass-dark rounded-2xl border border-burgundy-800/30 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-burgundy-900/50 border-b border-burgundy-800/30">
@@ -105,9 +173,7 @@ export default function VendasPage() {
                       <div>
                         <p className="text-gray-400 mb-4">Nenhuma venda registrada ainda.</p>
                         <Link href="/vendas/nova">
-                          <Button size="sm">
-                            Registrar Primeira Venda
-                          </Button>
+                          <Button size="sm">Registrar Primeira Venda</Button>
                         </Link>
                       </div>
                     )}
@@ -137,7 +203,7 @@ export default function VendasPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/vendas/${venda.id}/editar`}> {/* ✅ NOVO */}
+                        <Link href={`/vendas/${venda.id}/editar`}>
                           <Button size="sm" variant="ghost" className="hover:bg-primary-500/10 hover:text-primary-400">
                             <Edit className="w-4 h-4" />
                           </Button>

@@ -199,10 +199,10 @@ export default function NovaVendaPage() {
             Voltar
           </Button>
         </Link>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
           Nova Venda
         </h1>
-        <p className="text-gray-400 mt-2">Registre uma nova venda</p>
+        <p className="text-gray-400 mt-2 text-sm sm:text-base">Registre uma nova venda</p>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl">
@@ -318,7 +318,7 @@ export default function NovaVendaPage() {
             <CardTitle>Produtos (Opcional)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 placeholder="Nome do produto"
                 value={novoProduto.nome}
@@ -326,18 +326,20 @@ export default function NovaVendaPage() {
                 onKeyDown={handleKeyDownProduto}
                 className="flex-1"
               />
-              <Input
-                type="text"
-                placeholder="Valor (ex: 10,50)"
-                value={valorInputProduto}
-                onChange={handleValorProdutoChange}
-                onBlur={handleBlurValor}
-                onKeyDown={handleKeyDownProduto}
-                className="w-32"
-              />
-              <Button type="button" onClick={adicionarProduto} size="sm">
-                <Plus className="w-4 h-4" />
-              </Button>
+              <div className="flex gap-3">
+                <Input
+                  type="text"
+                  placeholder="Valor (ex: 10,50)"
+                  value={valorInputProduto}
+                  onChange={handleValorProdutoChange}
+                  onBlur={handleBlurValor}
+                  onKeyDown={handleKeyDownProduto}
+                  className="flex-1 sm:w-32 sm:flex-none"
+                />
+                <Button type="button" onClick={adicionarProduto} size="sm" className="shrink-0">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {produtos.length > 0 && (
@@ -386,12 +388,12 @@ export default function NovaVendaPage() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button type="submit" loading={loading} disabled={loading}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button type="submit" loading={loading} disabled={loading} className="sm:w-auto">
             Registrar Venda
           </Button>
-          <Link href="/vendas">
-            <Button type="button" variant="secondary" disabled={loading}>
+          <Link href="/vendas" className="sm:w-auto">
+            <Button type="button" variant="secondary" disabled={loading} className="w-full">
               Cancelar
             </Button>
           </Link>

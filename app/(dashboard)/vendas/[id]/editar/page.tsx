@@ -224,10 +224,10 @@ export default function EditarVendaPage() {
             Voltar
           </Button>
         </Link>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
           Editar Venda
         </h1>
-        <p className="text-gray-400 mt-2">Atualize os dados da venda</p>
+        <p className="text-gray-400 mt-2 text-sm sm:text-base">Atualize os dados da venda</p>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl">
@@ -392,23 +392,25 @@ export default function EditarVendaPage() {
             <CardTitle>Produtos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 placeholder="Nome do produto"
                 value={novoProduto.nome}
                 onChange={(e) => setNovoProduto({ ...novoProduto, nome: e.target.value })}
                 className="flex-1"
               />
-              <Input
-                type="number"
-                placeholder="Valor"
-                value={novoProduto.valor || ''}
-                onChange={(e) => setNovoProduto({ ...novoProduto, valor: Number(e.target.value) })}
-                className="w-32"
-              />
-              <Button type="button" onClick={adicionarProduto} size="sm">
-                <Plus className="w-4 h-4" />
-              </Button>
+              <div className="flex gap-3">
+                <Input
+                  type="number"
+                  placeholder="Valor"
+                  value={novoProduto.valor || ''}
+                  onChange={(e) => setNovoProduto({ ...novoProduto, valor: Number(e.target.value) })}
+                  className="flex-1 sm:w-32 sm:flex-none"
+                />
+                <Button type="button" onClick={adicionarProduto} size="sm" className="shrink-0">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {produtos.length > 0 && (
@@ -457,12 +459,12 @@ export default function EditarVendaPage() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button type="submit" loading={loading} disabled={loading}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button type="submit" loading={loading} disabled={loading} className="sm:w-auto">
             Salvar Alterações
           </Button>
-          <Link href={`/vendas/${params?.id}`}>
-            <Button type="button" variant="secondary" disabled={loading}>
+          <Link href={`/vendas/${params?.id}`} className="sm:w-auto">
+            <Button type="button" variant="secondary" disabled={loading} className="w-full">
               Cancelar
             </Button>
           </Link>

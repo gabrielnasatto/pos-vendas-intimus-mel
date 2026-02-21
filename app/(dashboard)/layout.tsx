@@ -151,7 +151,7 @@ export default function DashboardLayout({
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white p-2 rounded-xl hover:bg-burgundy-800/50 touch-manipulation active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
