@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft, Calendar, User, ShoppingBag, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar, User, ShoppingBag, DollarSign, AlertTriangle } from 'lucide-react';
 import { formatarData, formatarMoeda } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -205,6 +205,30 @@ export default function VendaDetalhesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-gray-300">{venda.observacoes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {venda.status === 'erro' && (
+        <Card className="mb-6 border-red-500/30 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="w-5 h-5" />
+              Erro no Envio WhatsApp
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-red-300">{venda.erroEnvio || 'Falha no envio via WhatsApp'}</p>
+            {venda.erroEm && (
+              <p className="text-xs text-gray-500">
+                Ocorreu em: {formatarData({ toDate: () => new Date(venda.erroEm) })}
+              </p>
+            )}
+            {venda.tentativas !== undefined && (
+              <p className="text-xs text-gray-500">
+                Tentativas realizadas: {venda.tentativas}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

@@ -4,22 +4,77 @@ import Link from 'next/link';
 import { useVendas } from '@/hooks/useVendas';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { Plus, Search, Trash2, Eye, Edit } from 'lucide-react';
+import { Plus, Search, Trash2, Eye, Edit, RefreshCw, X } from 'lucide-react';
 import { formatarData, formatarMoeda } from '@/lib/utils';
 import { useState } from 'react';
+import { StatusCliente } from '@/types';
+
+const STATUS_OPCOES: { value: '' | StatusCliente; label: string }[] = [
+  { value: '', label: 'Todos' },
+  { value: 'pendente', label: 'Pendente' },
+  { value: 'enviado', label: 'Enviado' },
+  { value: 'erro', label: 'Erro' },
+  { value: 'duplicado', label: 'Duplicado' },
+];
 
 export default function VendasPage() {
-  const { vendas, loading, deletarVenda } = useVendas();
-  const [busca, setBusca] = useState('');
+  const { vendas, loading, deletarVenda, resetarErros } = useVendas();
 
-  const vendasFiltradas = vendas.filter((v: any) =>
-    v.nomeCliente?.toLowerCase().includes(busca.toLowerCase()) ||
-    v.produtos.some((p: any) => p.nome.toLowerCase().includes(busca.toLowerCase()))
-  );
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'' | StatusCliente>('');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [valorMin, setValorMin] = useState('');
+  const [valorMax, setValorMax] = useState('');
+  const [reenviando, setReenviando] = useState(false);
+
+  const temFiltrosAtivos = filtroStatus !== '' || dataInicio !== '' || dataFim !== '' || valorMin !== '' || valorMax !== '';
+
+  const limparFiltros = () => {
+    setFiltroStatus('');
+    setDataInicio('');
+    setDataFim('');
+    setValorMin('');
+    setValorMax('');
+    setBusca('');
+  };
+
+  const vendasFiltradas = vendas
+    .filter((v) => filtroStatus === '' || v.status === filtroStatus)
+    .filter((v) => {
+      if (!dataInicio) return true;
+      const data = v.dataVenda?.toDate?.();
+      return data ? data >= new Date(dataInicio) : true;
+    })
+    .filter((v) => {
+      if (!dataFim) return true;
+      const data = v.dataVenda?.toDate?.();
+      return data ? data <= new Date(dataFim + 'T23:59:59') : true;
+    })
+    .filter((v) => !valorMin || v.valorTotal >= Number(valorMin))
+    .filter((v) => !valorMax || v.valorTotal <= Number(valorMax))
+    .filter(
+      (v) =>
+        !busca ||
+        v.nomeCliente?.toLowerCase().includes(busca.toLowerCase()) ||
+        v.produtos.some((p: any) => p.nome.toLowerCase().includes(busca.toLowerCase()))
+    );
+
+  const vendasComErro = vendas.filter((v) => v.status === 'erro');
 
   const handleDelete = async (id: string, nomeCliente: string) => {
     if (confirm(`Tem certeza que deseja deletar a venda de ${nomeCliente}?`)) {
       await deletarVenda(id);
+    }
+  };
+
+  const handleReenviar = async () => {
+    if (!confirm(`Reenviar ${vendasComErro.length} venda(s) com erro? Elas voltarão para 'pendente' e serão processadas na próxima execução do n8n.`)) return;
+    setReenviando(true);
+    try {
+      await resetarErros();
+    } finally {
+      setReenviando(false);
     }
   };
 
@@ -43,16 +98,29 @@ export default function VendasPage() {
           </h1>
           <p className="text-gray-400 mt-2 text-sm sm:text-base">Histórico de todas as vendas realizadas</p>
         </div>
-        <Link href="/vendas/nova">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Venda
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {vendasComErro.length > 0 && (
+            <Button
+              variant="danger"
+              onClick={handleReenviar}
+              disabled={reenviando}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${reenviando ? 'animate-spin' : ''}`} />
+              Reenviar com Erro ({vendasComErro.length})
+            </Button>
+          )}
+          <Link href="/vendas/nova">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Venda
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Busca */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
@@ -65,15 +133,90 @@ export default function VendasPage() {
         </div>
       </div>
 
+      {/* Pills de Status */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {STATUS_OPCOES.map((op) => (
+          <button
+            key={op.value}
+            onClick={() => setFiltroStatus(op.value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filtroStatus === op.value
+                ? 'bg-primary-500 border-primary-500 text-white'
+                : 'bg-burgundy-900/50 border-burgundy-800 text-gray-400 hover:border-primary-500/50 hover:text-gray-300'
+            }`}
+          >
+            {op.label}
+            {op.value !== '' && (
+              <span className="ml-1.5 opacity-70">
+                ({vendas.filter((v) => v.status === op.value).length})
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Filtros avançados */}
+      <div className="glass-dark rounded-xl border border-burgundy-800/30 p-4 mb-6">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[140px]">
+            <label className="block text-xs text-gray-500 mb-1">Data início</label>
+            <input
+              type="date"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="w-full px-3 py-2 bg-burgundy-900/50 border border-burgundy-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent [color-scheme:dark]"
+            />
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <label className="block text-xs text-gray-500 mb-1">Data fim</label>
+            <input
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="w-full px-3 py-2 bg-burgundy-900/50 border border-burgundy-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent [color-scheme:dark]"
+            />
+          </div>
+          <div className="flex-1 min-w-[110px]">
+            <label className="block text-xs text-gray-500 mb-1">Valor mín. (R$)</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={valorMin}
+              onChange={(e) => setValorMin(e.target.value)}
+              className="w-full px-3 py-2 bg-burgundy-900/50 border border-burgundy-800 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex-1 min-w-[110px]">
+            <label className="block text-xs text-gray-500 mb-1">Valor máx. (R$)</label>
+            <input
+              type="number"
+              placeholder="∞"
+              value={valorMax}
+              onChange={(e) => setValorMax(e.target.value)}
+              className="w-full px-3 py-2 bg-burgundy-900/50 border border-burgundy-800 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          {temFiltrosAtivos && (
+            <button
+              onClick={limparFiltros}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white border border-burgundy-800 hover:border-red-500/50 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Limpar
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Mobile: Cards */}
       <div className="md:hidden space-y-3">
         {vendasFiltradas.length === 0 ? (
           <div className="glass-dark p-10 rounded-2xl border border-burgundy-800/30 text-center">
-            {busca ? (
+            {busca || temFiltrosAtivos ? (
               <>
-                <p className="text-gray-400 mb-4">Nenhuma venda encontrada com "{busca}"</p>
-                <Button onClick={() => setBusca('')} size="sm" variant="secondary">
-                  Limpar Busca
+                <p className="text-gray-400 mb-4">Nenhuma venda encontrada com os filtros aplicados</p>
+                <Button onClick={limparFiltros} size="sm" variant="secondary">
+                  Limpar Filtros
                 </Button>
               </>
             ) : (
@@ -95,7 +238,14 @@ export default function VendasPage() {
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">{formatarData(venda.dataVenda)}</p>
                 </div>
-                <Badge status={venda.status || 'pendente'} />
+                <div className="flex flex-col items-end gap-1">
+                  <Badge status={venda.status || 'pendente'} />
+                  {venda.status === 'erro' && venda.erroEnvio && (
+                    <p className="text-xs text-red-400/80 text-right max-w-[160px] leading-tight">
+                      {venda.erroEnvio}
+                    </p>
+                  )}
+                </div>
               </div>
               {venda.produtos.length > 0 && (
                 <p className="text-sm text-gray-400 mb-3 line-clamp-1">
@@ -162,11 +312,11 @@ export default function VendasPage() {
               {vendasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    {busca ? (
+                    {busca || temFiltrosAtivos ? (
                       <div>
-                        <p className="text-gray-400 mb-4">Nenhuma venda encontrada com "{busca}"</p>
-                        <Button onClick={() => setBusca('')} size="sm" variant="secondary">
-                          Limpar Busca
+                        <p className="text-gray-400 mb-4">Nenhuma venda encontrada com os filtros aplicados</p>
+                        <Button onClick={limparFiltros} size="sm" variant="secondary">
+                          Limpar Filtros
                         </Button>
                       </div>
                     ) : (
@@ -198,8 +348,13 @@ export default function VendasPage() {
                         {formatarMoeda(venda.valorTotal)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <Badge status={venda.status || 'pendente'} />
+                      {venda.status === 'erro' && venda.erroEnvio && (
+                        <p className="text-xs text-red-400/80 mt-1 max-w-[200px] leading-tight">
+                          {venda.erroEnvio}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
@@ -233,8 +388,9 @@ export default function VendasPage() {
 
       {/* Total */}
       <div className="mt-6 text-center text-sm text-gray-500">
-        {busca && `${vendasFiltradas.length} de ${vendas.length} vendas`}
-        {!busca && `Total: ${vendas.length} vendas`}
+        {(busca || temFiltrosAtivos)
+          ? `${vendasFiltradas.length} de ${vendas.length} vendas`
+          : `Total: ${vendas.length} vendas`}
       </div>
     </div>
   );

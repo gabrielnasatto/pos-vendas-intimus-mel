@@ -78,4 +78,7 @@ export interface Estatisticas {
 
 export interface VendaCompleta extends Venda {
   nomeCliente?: string;
+  tentativas?: number;
+  erroEnvio?: string | null;
+  erroEm?: string | null;
 }

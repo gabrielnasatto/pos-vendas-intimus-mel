@@ -59,6 +59,22 @@ export function useVendas() {
     }
   };
 
+  const resetarErros = async (): Promise<number> => {
+    try {
+      const res = await fetch('/api/vendas/resetar-erros', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Erro ao resetar vendas');
+
+      toast.success(`${data.total} venda(s) recolocada(s) na fila!`);
+      await fetchVendas();
+      return data.total;
+    } catch (error) {
+      console.error('Erro ao resetar vendas com erro:', error);
+      toast.error('Erro ao reenviar mensagens');
+      throw error;
+    }
+  };
+
   const atualizarStatusVenda = async (id: string, status: string) => {
     try {
       const res = await fetch('/api/vendas', {
@@ -89,5 +105,6 @@ export function useVendas() {
     fetchVendas,
     deletarVenda,
     atualizarStatusVenda,
+    resetarErros,
   };
 }
