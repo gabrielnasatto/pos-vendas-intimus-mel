@@ -65,7 +65,12 @@ export function useVendas() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Erro ao resetar vendas');
 
-      toast.success(`${data.total} venda(s) recolocada(s) na fila!`);
+      // Disparar o workflow do n8n imediatamente
+      fetch('/api/n8n', { method: 'POST' }).catch(() => {
+        // silencioso — o cron vai pegar na próxima janela mesmo assim
+      });
+
+      toast.success(`${data.total} venda(s) recolocada(s) na fila e workflow disparado!`);
       await fetchVendas();
       return data.total;
     } catch (error) {
