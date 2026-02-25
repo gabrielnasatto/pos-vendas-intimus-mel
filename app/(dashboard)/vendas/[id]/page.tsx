@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft, Calendar, User, ShoppingBag, DollarSign, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Calendar, User, ShoppingBag, DollarSign, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { formatarData, formatarMoeda } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -56,6 +56,24 @@ export default function VendaDetalhesPage() {
       console.error('Erro ao buscar venda:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAtualizarStatus = async (novoStatus: string) => {
+    if (!venda) return;
+    try {
+      const res = await fetch('/api/vendas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vendaId: venda.id, status: novoStatus }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast.success(`Status atualizado para "${novoStatus}"`);
+      fetchVenda(venda.id);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao atualizar status');
     }
   };
 
@@ -231,6 +249,33 @@ export default function VendaDetalhesPage() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Atualização manual de status */}
+      {venda.status !== 'enviado' && (
+        <div className="glass-dark rounded-xl border border-burgundy-800/30 p-4 mb-6">
+          <p className="text-xs text-gray-500 mb-3">Atualizar status manualmente</p>
+          <div className="flex flex-wrap gap-2">
+            {venda.status !== 'enviado' && (
+              <button
+                onClick={() => handleAtualizarStatus('enviado')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Marcar como Enviado
+              </button>
+            )}
+            {venda.status !== 'pendente' && (
+              <button
+                onClick={() => handleAtualizarStatus('pendente')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                Marcar como Pendente
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="flex flex-col sm:flex-row gap-3">
