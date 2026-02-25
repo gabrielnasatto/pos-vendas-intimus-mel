@@ -1,5 +1,5 @@
 {
-  "name": "Pós-Vendas WhatsApp - API Routes",
+  "name": "Pós-Vendas WhatsApp - Teste",
   "nodes": [
     {
       "parameters": {},
@@ -48,7 +48,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "0f36165e-1423-4386-987a-67b31e15cc92",
+        "path": "f1e2d3c4-b5a6-7890-abcd-ef0123456789",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -59,7 +59,7 @@
       ],
       "id": "4cfecc95-ee98-4d51-8d4b-75bb91fc6d5d",
       "name": "Webhook",
-      "webhookId": "0f36165e-1423-4386-987a-67b31e15cc92"
+      "webhookId": "f1e2d3c4-b5a6-7890-abcd-ef0123456789"
     },
     {
       "parameters": {
@@ -90,7 +90,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas",
+        "url": "https://SEU-PROJETO-TESTE.vercel.app/api/vendas",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -181,7 +181,7 @@
     },
     {
       "parameters": {
-        "url": "=https://pos-vendas-intimus-mel.vercel.app/api/clientes/{{$json.clienteId}}",
+        "url": "=https://SEU-PROJETO-TESTE.vercel.app/api/clientes/{{$json.clienteId}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -231,7 +231,7 @@
     {
       "parameters": {
         "resource": "messages-api",
-        "instanceName": "Intimus Mel",
+        "instanceName": "Gabriel (Pessoal)",
         "remoteJid": "={{ $json.telefone.replace(/\\D/g, '') }}",
         "messageText": "=Oiee {{ $json.primeiroNome }}, aqui é Fernanda da Intimus Mel 🐝❣️\nDeu tudo certo com a sua compra? Depois me conta como ficou!! ☺️",
         "options_message": {}
@@ -248,15 +248,14 @@
       "continueOnFail": true,
       "credentials": {
         "evolutionApi": {
-          "id": "doB95zMnCqanUZ0d",
-          "name": "Intimus Mel"
+          "name": "Gabriel (Pessoal)"
         }
       }
     },
     {
       "parameters": {
         "resource": "messages-api",
-        "instanceName": "Intimus Mel",
+        "instanceName": "Gabriel (Pessoal)",
         "remoteJid": "={{ $json.telefone.replace(/\\D/g, '') }}",
         "messageText": "=Oiee {{ $json.primeiroNome }}, aqui é Fernanda da Intimus Mel 🐝❣️\nPassando pra saber o que você achou da sua compra. Depois me conta se ja usou, vou adorar saber!! ☺️",
         "options_message": {}
@@ -273,8 +272,7 @@
       "continueOnFail": true,
       "credentials": {
         "evolutionApi": {
-          "id": "doB95zMnCqanUZ0d",
-          "name": "Intimus Mel"
+          "name": "Gabriel (Pessoal)"
         }
       }
     },
@@ -313,7 +311,7 @@
     },
     {
       "parameters": {
-        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas?status=pendente",
+        "url": "https://SEU-PROJETO-TESTE.vercel.app/api/vendas?status=pendente",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -383,7 +381,7 @@
     },
     {
       "parameters": {
-        "url": "=https://pos-vendas-intimus-mel.vercel.app/api/vendas?vendaId={{$json.vendaId}}",
+        "url": "=https://SEU-PROJETO-TESTE.vercel.app/api/vendas?vendaId={{$json.vendaId}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -420,7 +418,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas",
+        "url": "https://SEU-PROJETO-TESTE.vercel.app/api/vendas",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -684,19 +682,5 @@
     "timezone": "America/Sao_Paulo",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
-  },
-  "versionId": "6ea6bf7f-108e-4038-a721-813eb491c97c",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "1d456639c72d8dd788e18d0ad42fcff3a3138a9ee3a7230d9febd93a2aa561a0"
-  },
-  "id": "K1Cqx0uZxZTqFspU",
-  "tags": [
-    {
-      "updatedAt": "2026-02-07T13:57:45.771Z",
-      "createdAt": "2026-02-07T13:57:45.771Z",
-      "id": "YjmC4Q6cYP8w3XTm",
-      "name": "Intimus Mel"
-    }
-  ]
+  }
 }

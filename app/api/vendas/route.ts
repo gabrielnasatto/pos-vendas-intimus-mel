@@ -20,6 +20,7 @@ function serializeVenda(id: string, data: FirebaseFirestore.DocumentData, nomeCl
     observacoes: data.observacoes ?? null,
     status: data.status ?? 'pendente',
     provou: data.provou ?? false,
+    tentativas: data.tentativas ?? 0,
     dataEnvio: data.dataEnvio?.toDate?.()?.toISOString() ?? null,
     createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
   };
