@@ -221,7 +221,7 @@ export default function VendaDetalhesPage() {
             <p className="text-red-300">{venda.erroEnvio || 'Falha no envio via WhatsApp'}</p>
             {venda.erroEm && (
               <p className="text-xs text-gray-500">
-                Ocorreu em: {formatarData({ toDate: () => new Date(venda.erroEm) })}
+                Ocorreu em: {formatarData(venda.erroEm)}
               </p>
             )}
             {venda.tentativas !== undefined && (
