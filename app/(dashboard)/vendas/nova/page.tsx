@@ -6,12 +6,14 @@ import { useClientes } from '@/hooks/useClientes';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhoneInputField from '@/components/ui/PhoneInputField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Produto, Cliente } from '@/types';
 import toast from 'react-hot-toast';
-import { validarTelefone, validarDataNascimento } from '@/lib/utils';
+import { validarDataNascimento, normalizarParaE164 } from '@/lib/utils';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 
 export default function NovaVendaPage() {
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function NovaVendaPage() {
 
   // Dados do cliente
   const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [telefone, setTelefone] = useState<string | undefined>(undefined);
   const [clienteExistente, setClienteExistente] = useState<Cliente | null>(null);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarSugestoesTelefone, setMostrarSugestoesTelefone] = useState(false);
@@ -37,7 +39,8 @@ export default function NovaVendaPage() {
     c.nome.toLowerCase().includes(nome.toLowerCase())
   );
 
-  const telefoneSomenteDigitos = telefone.replace(/\D/g, '');
+  // Filtro por telefone: compara dígitos para suportar formatos antigos e E.164
+  const telefoneSomenteDigitos = (telefone || '').replace(/\D/g, '');
   const clientesFiltradosPorTelefone =
     telefoneSomenteDigitos.length >= 4
       ? clientes.filter((c) => c.telefone.replace(/\D/g, '').includes(telefoneSomenteDigitos))
@@ -46,7 +49,8 @@ export default function NovaVendaPage() {
   const selecionarCliente = (cliente: Cliente) => {
     setClienteExistente(cliente);
     setNome(cliente.nome);
-    setTelefone(cliente.telefone);
+    // Normaliza o telefone do cliente para E.164 ao selecionar
+    setTelefone(normalizarParaE164(cliente.telefone));
     setDataNascimento(cliente.dataNascimento || '');
     setMostrarSugestoes(false);
     setMostrarSugestoesTelefone(false);
@@ -58,9 +62,8 @@ export default function NovaVendaPage() {
     setMostrarSugestoes(true);
   };
 
-  const handleTelefoneChange = (value: string) => {
-    const soNumeros = value.replace(/\D/g, '');
-    setTelefone(soNumeros);
+  const handleTelefoneChange = (value: string | undefined) => {
+    setTelefone(value);
     setClienteExistente(null);
     setMostrarSugestoesTelefone(true);
   };
@@ -118,10 +121,13 @@ export default function NovaVendaPage() {
       toast.error('Nome do cliente é obrigatório!');
       return;
     }
-    if (!telefone.trim() || !validarTelefone(telefone)) {
-      toast.error('Telefone inválido! Use formato: 47991234567');
+
+    // Validação E.164 com isValidPhoneNumber
+    if (!telefone || !isValidPhoneNumber(telefone)) {
+      toast.error('Número de telefone inválido');
       return;
     }
+
     if (dataNascimento && !validarDataNascimento(dataNascimento)) {
       toast.error('Data de nascimento inválida! Use formato: DD/MM/AAAA');
       return;
@@ -133,8 +139,8 @@ export default function NovaVendaPage() {
       let clienteId: string;
 
       if (!clienteExistente) {
-        // Verificar duplicidade de telefone
-        const telefoneDigitos = telefone.trim().replace(/\D/g, '');
+        // Verificar duplicidade comparando dígitos (suporta formatos antigos e E.164)
+        const telefoneDigitos = telefone.replace(/\D/g, '');
         const clienteComMesmoTelefone = clientes.find(
           (c) => c.telefone.replace(/\D/g, '') === telefoneDigitos
         );
@@ -146,13 +152,13 @@ export default function NovaVendaPage() {
           return;
         }
 
-        // Criar novo cliente
+        // Criar novo cliente com telefone em E.164
         const clienteRes = await fetch('/api/clientes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nome: nome.trim(),
-            telefone: telefone.trim(),
+            telefone: telefone, // E.164
             dataNascimento: dataNascimento || undefined,
             provou: false,
           }),
@@ -248,7 +254,7 @@ export default function NovaVendaPage() {
                   onClick={() => {
                     setClienteExistente(null);
                     setNome('');
-                    setTelefone('');
+                    setTelefone(undefined);
                     setDataNascimento('');
                   }}
                   className="text-sm text-green-400 hover:text-green-300 mt-2 underline"
@@ -259,17 +265,11 @@ export default function NovaVendaPage() {
             )}
 
             <div className="relative">
-              <Input
-                label="Telefone (com DDD)"
+              <PhoneInputField
+                label="Telefone"
                 value={telefone}
-                onChange={(e) => handleTelefoneChange(e.target.value)}
-                onFocus={() => setMostrarSugestoesTelefone(true)}
-                onBlur={() => setTimeout(() => setMostrarSugestoesTelefone(false), 200)}
-                placeholder="47991234567"
-                required
-                inputMode="numeric"
-                maxLength={11}
-                helperText="Apenas números, com DDD. Ex: 47991234567"
+                onChange={handleTelefoneChange}
+                helperText="Selecione o país e digite o número com DDD"
                 disabled={clienteExistente !== null}
               />
               {mostrarSugestoesTelefone &&

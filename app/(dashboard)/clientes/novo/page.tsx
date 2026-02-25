@@ -2,22 +2,32 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useClientes } from '@/hooks/useClientes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhoneInputField from '@/components/ui/PhoneInputField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { validarTelefone, validarDataNascimento } from '@/lib/utils';
+import { validarDataNascimento, normalizarParaE164 } from '@/lib/utils';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  telefone: z.string().refine(validarTelefone, 'Telefone inválido (use DDD + número)'),
+  telefone: z
+    .string()
+    .min(1, 'Telefone é obrigatório')
+    .refine(
+      (val) => {
+        try { return isValidPhoneNumber(val); } catch { return false; }
+      },
+      'Número de telefone inválido'
+    ),
   dataNascimento: z.string().optional().refine(
     (val) => !val || validarDataNascimento(val),
     'Data inválida (use DD/MM/AAAA)'
@@ -35,13 +45,13 @@ export default function NovoClientePage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { telefone: '' },
   });
-
-  const telefoneField = register('telefone');
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -63,7 +73,7 @@ export default function NovoClientePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nome: data.nome,
-          telefone: data.telefone,
+          telefone: data.telefone, // já em E.164 via PhoneInput
           dataNascimento: data.dataNascimento || undefined,
           provou: false,
         }),
@@ -111,19 +121,19 @@ export default function NovoClientePage() {
               required
             />
 
-            <Input
-              label="Telefone (com DDD)"
-              {...telefoneField}
-              onChange={(e) => {
-                e.target.value = e.target.value.replace(/\D/g, '');
-                telefoneField.onChange(e);
-              }}
-              error={errors.telefone?.message}
-              placeholder="47991234567"
-              required
-              inputMode="numeric"
-              maxLength={11}
-              helperText="Apenas números, com DDD. Ex: 47991234567"
+            <Controller
+              name="telefone"
+              control={control}
+              render={({ field }) => (
+                <PhoneInputField
+                  label="Telefone"
+                  value={field.value}
+                  onChange={(val) => field.onChange(val ?? '')}
+                  error={errors.telefone?.message}
+                  helperText="Selecione o país e digite o número com DDD"
+                  required
+                />
+              )}
             />
 
             <Input

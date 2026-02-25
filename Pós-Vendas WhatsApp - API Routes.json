@@ -1,0 +1,770 @@
+{
+  "name": "Pós-Vendas WhatsApp - API Routes",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        7280
+      ],
+      "id": "85acc1a4-5c22-485b-89be-8d6fbcc6b9c2",
+      "name": "Merge Branches"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a9e89b5-5cce-4cdc-9689-fb1cde658a86",
+              "leftValue": "={{ $json.bloqueadosPor24h }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        7280
+      ],
+      "id": "9d0650f7-75c0-4873-9651-92020e4acf40",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "0f36165e-1423-4386-987a-67b31e15cc92",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1248,
+        7472
+      ],
+      "id": "4cfecc95-ee98-4d51-8d4b-75bb91fc6d5d",
+      "name": "Webhook",
+      "webhookId": "0f36165e-1423-4386-987a-67b31e15cc92"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "preserve-venda-ids-comprou",
+              "name": "vendaIds",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.vendaIds}}",
+              "type": "array"
+            },
+            {
+              "id": "preserve-cliente-id-comprou",
+              "name": "clienteId",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.clienteId}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-primeiro-nome-comprou",
+              "name": "primeiroNome",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.primeiroNome}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-telefone-comprou",
+              "name": "telefone",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.telefone}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-erro-comprou",
+              "name": "erroEnvio",
+              "value": "={{ $json.error?.message || $json.error || null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        7376
+      ],
+      "id": "418ed4fb-3deb-4fc2-b7c3-5757eec74cb8",
+      "name": "Preservar Dados - Comprou1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "preserve-venda-ids-provou",
+              "name": "vendaIds",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.vendaIds}}",
+              "type": "array"
+            },
+            {
+              "id": "preserve-cliente-id-provou",
+              "name": "clienteId",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.clienteId}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-primeiro-nome-provou",
+              "name": "primeiroNome",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.primeiroNome}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-telefone-provou",
+              "name": "telefone",
+              "value": "={{$node[\"Extrair Dados Cliente1\"].json.telefone}}",
+              "type": "string"
+            },
+            {
+              "id": "preserve-erro-provou",
+              "name": "erroEnvio",
+              "value": "={{ $json.error?.message || $json.error || null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        7168
+      ],
+      "id": "8734a5b0-d2ea-429b-9da7-6449a2666172",
+      "name": "Preservar Dados - Provou1"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "*2O\\9~TZZKU@d5-2PgW9p"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={ \"vendaId\": \"{{$json.vendaId}}\", \"status\": \"enviado\", \"dataEnvio\": \"{{$now.toISO()}}\" }",
+        "options": {}
+      },
+      "id": "59d92998-f1de-4e13-a717-ec57eb7310be",
+      "name": "Atualizar Status Venda1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1680,
+        7376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop por cada cliente e por cada vendaId, criando uma requisição de atualização\n// IMPORTANTE: usar $input.all() para processar TODOS os clientes, não apenas o primeiro\nconst items = [];\n\nfor (const item of $input.all()) {\n  const vendaIds = item.json.vendaIds || [];\n\n  for (const vendaId of vendaIds) {\n    items.push({\n      json: {\n        vendaId: vendaId,\n        clienteId: item.json.clienteId,\n        primeiroNome: item.json.primeiroNome,\n        telefone: item.json.telefone,\n        quantidadeVendas: vendaIds.length\n      }\n    });\n  }\n\n  console.log(`Atualizando ${vendaIds.length} venda(s) para cliente ${item.json.clienteId}`);\n}\n\nconsole.log(`Total de vendas a atualizar: ${items.length}`);\n\nreturn items;"
+      },
+      "id": "aa1257cd-8d69-4bb7-8bb1-5a5d17617d46",
+      "name": "Loop Vendas para Atualizar1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        7376
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "e80e7400-48b2-485a-9844-e76550709dd8",
+              "leftValue": "={{$json.provou}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "907d133c-ce59-4bde-9da9-61d78e819690",
+      "name": "Cliente Provou?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        768,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrair dados do cliente combinando com vendaIds do node 'Agrupar por Cliente'\n// A API retorna: { success: true, cliente: { id, nome, telefone, ... } }\nconst items = [];\n\nconst allClientes = $input.all();\nconst allAgrupados = $(\"Agrupar por Cliente1\").all();\n\nconsole.log(`Clientes: ${allClientes.length}, Agrupados: ${allAgrupados.length}`);\n\nfor (let i = 0; i < allClientes.length; i++) {\n  const clienteData = allClientes[i].json;\n  const agrupado = allAgrupados[i]?.json || {};\n\n  // Nova API retorna { success: true, cliente: { id, nome, telefone, ... } }\n  const clienteInfo = clienteData.cliente || {};\n  const nome = clienteInfo.nome || 'Cliente';\n  const telefone = clienteInfo.telefone || '';\n  const clienteId = clienteInfo.id || '';\n  const primeiroNome = nome.split(' ')[0];\n\n  const vendaIds = agrupado.vendaIds || [];\n  const provou = agrupado.provou || false;\n  const quantidadeVendas = agrupado.quantidadeVendas || 1;\n\n  console.log(`[${i}] Cliente ${clienteId} (agrupado: ${agrupado.clienteId}): ${vendaIds.length} venda(s)`);\n\n  items.push({\n    json: {\n      clienteId: clienteId,\n      provou: provou,\n      nome: nome,\n      primeiroNome: primeiroNome,\n      telefone: telefone,\n      vendaIds: vendaIds,\n      quantidadeVendas: quantidadeVendas\n    }\n  });\n}\n\nreturn items;"
+      },
+      "id": "fc92719e-75f9-4c9a-9fd1-0113eb9d26eb",
+      "name": "Extrair Dados Cliente1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://pos-vendas-intimus-mel.vercel.app/api/clientes/{{$json.clienteId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "*2O\\9~TZZKU@d5-2PgW9p"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7bb77607-2bb0-4477-8a92-3e729a2b1d16",
+      "name": "Buscar Cliente1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        320,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agrupar vendas por cliente e remover duplicatas\nconst clientesMap = new Map();\n\n// Recuperar manualTrigger do primeiro item\nconst manualTrigger = $input.first()?.json?.manualTrigger;\n\nfor (const item of $input.all()) {\n  const venda = item.json;\n  const clienteId = venda.clienteId;\n  \n  if (!clientesMap.has(clienteId)) {\n    // Primeira venda deste cliente\n    clientesMap.set(clienteId, {\n      clienteId: clienteId,\n      provou: venda.provou,\n      vendaIds: [venda.vendaId],\n      vendas: [venda],\n      manualTrigger: manualTrigger\n    });\n  } else {\n    // Cliente já existe - adicionar vendaId\n    const cliente = clientesMap.get(clienteId);\n    cliente.vendaIds.push(venda.vendaId);\n    cliente.vendas.push(venda);\n    // Se alguma venda não provou, marca como false\n    if (!venda.provou) {\n      cliente.provou = false;\n    }\n  }\n}\n\n// Converter Map para array\nconst items = Array.from(clientesMap.values()).map(cliente => ({\n  json: {\n    clienteId: cliente.clienteId,\n    provou: cliente.provou,\n    vendaIds: cliente.vendaIds,\n    quantidadeVendas: cliente.vendas.length,\n    manualTrigger: cliente.manualTrigger\n  }\n}));\n\nconsole.log(`${items.length} cliente(s) únicos identificados`);\nconsole.log('Agrupamento:', items);\n\nreturn items;"
+      },
+      "id": "9620430a-fc60-45cf-bf7e-2cc1013661b1",
+      "name": "Agrupar por Cliente1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        7264
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar resposta da API Next.js /api/vendas?status=pendente\n// A API retorna: { success: true, vendas: [{ id, clienteId, dataVenda, provou, valorTotal, ... }] }\nconst items = [];\nconst data = $input.first().json;\n\nconsole.log('Input recebido:', JSON.stringify(data, null, 2));\n\nif (data.success && Array.isArray(data.vendas)) {\n  for (const venda of data.vendas) {\n    items.push({\n      json: {\n        vendaId: venda.id,\n        clienteId: venda.clienteId,\n        dataVenda: venda.dataVenda,\n        provou: venda.provou || false,\n        valorTotal: venda.valorTotal || 0,\n        observacoes: venda.observacoes || '',\n      }\n    });\n  }\n}\n\nconsole.log('Items processados:', items.length);\n\nif (items.length === 0) {\n  return [{\n    json: {\n      erro: 'Nenhuma venda encontrada',\n      inputData: data\n    }\n  }];\n}\n\nreturn items;"
+      },
+      "id": "ccb4b06b-2f6e-4dcc-9593-7f47afe89add",
+      "name": "Processar Vendas1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Intimus Mel",
+        "remoteJid": "={{ $json.telefone.replace(/\\D/g, '') }}",
+        "messageText": "=Oiee {{ $json.primeiroNome }}, aqui é Fernanda da Intimus Mel 🐝❣️\nDeu tudo certo com a sua compra? Depois me conta como ficou!! ☺️",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        896,
+        7376
+      ],
+      "id": "7eb68a29-6f61-4517-93ad-a1368041171a",
+      "name": "Enviar - Comprou Direto1",
+      "onError": "continueRegularOutput",
+      "continueOnFail": true,
+      "credentials": {
+        "evolutionApi": {
+          "id": "doB95zMnCqanUZ0d",
+          "name": "Intimus Mel"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Intimus Mel",
+        "remoteJid": "={{ $json.telefone.replace(/\\D/g, '') }}",
+        "messageText": "=Oiee {{ $json.primeiroNome }}, aqui é Fernanda da Intimus Mel 🐝❣️\nPassando pra saber o que você achou da sua compra. Depois me conta se ja usou, vou adorar saber!! ☺️",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        896,
+        7168
+      ],
+      "id": "4fa59058-e344-4267-bd93-89d418c3407b",
+      "name": "Enviar - Provou1",
+      "onError": "continueRegularOutput",
+      "continueOnFail": true,
+      "credentials": {
+        "evolutionApi": {
+          "id": "doB95zMnCqanUZ0d",
+          "name": "Intimus Mel"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validar se passaram 24h desde a venda (ou pular se for disparo manual)\nconst items = [];\nconst agora = new Date();\n\n// Verificar qual nó foi o trigger\n// Se Webhook foi executado = disparo manual (botão)\n// Se Scheduler foi executado = automático (cron)\nlet isManualTrigger = false;\ntry {\n  isManualTrigger = !!$node[\"Webhook\"]?.json;\n} catch (e) {\n  isManualTrigger = false;\n}\n\nconsole.log(`Iniciando validação de 24h... [Manual (via Webhook): ${isManualTrigger}]`);\n\nfor (const item of $input.all()) {\n  const venda = item.json;\n  const vendaId = venda.vendaId;\n  \n  console.log(`Venda ${vendaId}:`, JSON.stringify(venda, null, 2));\n  \n  if (!venda.dataVenda) {\n    console.log(`Venda ${vendaId}: SEM dataVenda - BLOQUEADA`);\n    continue;\n  }\n  \n  // SE FOR DISPARO MANUAL (WEBHOOK), LIBERA TUDO\n  if (isManualTrigger) {\n    console.log(`⚡ Venda ${vendaId}: DISPARO MANUAL (WEBHOOK) - LIBERADA sem validação de 24h`);\n    items.push(item);\n    continue;\n  }\n  \n  let dataVenda;\n  \n  if (typeof venda.dataVenda === 'string') {\n    dataVenda = new Date(venda.dataVenda);\n  } \n  else if (venda.dataVenda?.toDate) {\n    dataVenda = venda.dataVenda.toDate();\n  } \n  else if (typeof venda.dataVenda === 'number') {\n    if (venda.dataVenda > 10000000000) {\n      dataVenda = new Date(venda.dataVenda);\n    } else {\n      dataVenda = new Date(venda.dataVenda * 1000);\n    }\n  } \n  else {\n    dataVenda = new Date(venda.dataVenda);\n  }\n  \n  if (isNaN(dataVenda.getTime())) {\n    console.log(`Venda ${vendaId}: dataVenda inválida (${venda.dataVenda}) - BLOQUEADA`);\n    continue;\n  }\n  \n  const diferenca = agora - dataVenda;\n  const horas = diferenca / (1000 * 60 * 60);\n  \n  console.log(`Venda ${vendaId}: ${horas.toFixed(1)} horas desde ${dataVenda.toISOString()}`);\n  \n  if (horas >= 24) {\n    console.log(`✓ Venda ${vendaId}: ${horas.toFixed(1)} horas - LIBERADA para envio`);\n    items.push(item);\n  } else {\n    console.log(`✗ Venda ${vendaId}: ${horas.toFixed(1)} horas - Aguardando ${(24 - horas).toFixed(1)}h`);\n  }\n}\n\nif (items.length === 0) {\n  console.log('❌ NENHUMA venda pronta para envio (todas < 24h)');\n  return [{\n    json: {\n      aviso: 'Nenhuma venda pronta - todas ainda estão no período de espera (< 24h)',\n      bloqueadosPor24h: true\n    }\n  }];\n}\n\nconsole.log(`✅ ${items.length} venda(s) pronta(s) para envio`);\nreturn items;"
+      },
+      "id": "05cf52e3-f593-4420-9746-266adba58d48",
+      "name": "Validar 24h desde Compra",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9-17 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "98a3e0a7-c989-4e94-8fc7-38dd6e589f9a",
+      "name": "Agendar 9h a 17h Seg-Sex",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1248,
+        7280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas?status=pendente",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "*2O\\9~TZZKU@d5-2PgW9p"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -896,
+        7280
+      ],
+      "id": "1cb69c97-5e6e-4f47-b6ed-f295c8b7d738",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-erro-envio",
+              "leftValue": "={{ $json.erroEnvio }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        7280
+      ],
+      "id": "if-envio-com-erro",
+      "name": "IF Envio com Erro?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Criar um item por vendaId para atualizar status de erro individualmente\nconst items = [];\nconst vendaIds = $json.vendaIds || [];\nconst erroMensagem = $json.erroEnvio || 'Falha no envio via WhatsApp';\n\nfor (const vendaId of vendaIds) {\n  items.push({\n    json: {\n      vendaId: vendaId,\n      erroMensagem: erroMensagem\n    }\n  });\n}\n\nconsole.log(`Processando ${items.length} venda(s) com erro de envio`);\nreturn items;"
+      },
+      "id": "loop-vendas-erro",
+      "name": "Loop Vendas - Erro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        7168
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://pos-vendas-intimus-mel.vercel.app/api/vendas?vendaId={{$json.vendaId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "*2O\\9~TZZKU@d5-2PgW9p"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-venda-tentativas",
+      "name": "Buscar Venda para Tentativas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1520,
+        7168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lê tentativas atuais da venda e decide novo status:\n//   tentativas >= 2 → status 'erro' (falha definitiva)\n//   tentativas < 2  → status 'pendente' (nova tentativa futura)\nconst vendaData = $input.item.json;\nconst venda = vendaData.venda || {};\nconst tentativasAtual = Number(venda.tentativas) || 0;\nconst novasTentativas = tentativasAtual + 1;\nconst novoStatus = tentativasAtual >= 2 ? 'erro' : 'pendente';\n\nconsole.log(`Venda ${venda.id}: tentativas=${tentativasAtual} → novoStatus=${novoStatus}`);\n\nreturn [{\n  json: {\n    vendaId: venda.id,\n    status: novoStatus,\n    tentativas: novasTentativas,\n    erroEnvio: 'Falha no envio via WhatsApp',\n    erroEm: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "preparar-status-erro",
+      "name": "Preparar Status Erro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        7168
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://pos-vendas-intimus-mel.vercel.app/api/vendas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "*2O\\9~TZZKU@d5-2PgW9p"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={ \"vendaId\": \"{{$json.vendaId}}\", \"status\": \"{{$json.status}}\", \"tentativas\": {{$json.tentativas}}, \"erroEnvio\": \"{{$json.erroEnvio}}\", \"erroEm\": \"{{$json.erroEm}}\" }",
+        "options": {}
+      },
+      "id": "atualizar-status-com-erro",
+      "name": "Atualizar Status - Com Erro",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1840,
+        7168
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Agrupar por Cliente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Vendas para Atualizar1": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status Venda1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Provou?1": {
+      "main": [
+        [
+          {
+            "node": "Enviar - Provou1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar - Comprou Direto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Dados Cliente1": {
+      "main": [
+        [
+          {
+            "node": "Cliente Provou?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Cliente1": {
+      "main": [
+        [
+          {
+            "node": "Extrair Dados Cliente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar por Cliente1": {
+      "main": [
+        [
+          {
+            "node": "Buscar Cliente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Vendas1": {
+      "main": [
+        [
+          {
+            "node": "Validar 24h desde Compra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar - Comprou Direto1": {
+      "main": [
+        [
+          {
+            "node": "Preservar Dados - Comprou1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar - Provou1": {
+      "main": [
+        [
+          {
+            "node": "Preservar Dados - Provou1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar 24h desde Compra": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar 9h a 17h Seg-Sex": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Processar Vendas1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preservar Dados - Provou1": {
+      "main": [
+        [
+          {
+            "node": "IF Envio com Erro?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preservar Dados - Comprou1": {
+      "main": [
+        [
+          {
+            "node": "IF Envio com Erro?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Envio com Erro?": {
+      "main": [
+        [
+          {
+            "node": "Loop Vendas - Erro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Vendas para Atualizar1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Vendas - Erro": {
+      "main": [
+        [
+          {
+            "node": "Buscar Venda para Tentativas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Venda para Tentativas": {
+      "main": [
+        [
+          {
+            "node": "Preparar Status Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Status Erro": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status - Com Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "6ea6bf7f-108e-4038-a721-813eb491c97c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d456639c72d8dd788e18d0ad42fcff3a3138a9ee3a7230d9febd93a2aa561a0"
+  },
+  "id": "K1Cqx0uZxZTqFspU",
+  "tags": [
+    {
+      "updatedAt": "2026-02-07T13:57:45.771Z",
+      "createdAt": "2026-02-07T13:57:45.771Z",
+      "id": "YjmC4Q6cYP8w3XTm",
+      "name": "Intimus Mel"
+    }
+  ]
+}

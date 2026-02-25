@@ -6,11 +6,14 @@ import { useClientes } from '@/hooks/useClientes';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhoneInputField from '@/components/ui/PhoneInputField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft, Plus, Trash2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { Produto, Cliente } from '@/types';
 import toast from 'react-hot-toast';
+import { normalizarParaE164 } from '@/lib/utils';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 
 export default function EditarVendaPage() {
   const router = useRouter();
@@ -33,7 +36,7 @@ export default function EditarVendaPage() {
   // Novo cliente inline
   const [mostrarFormNovoCliente, setMostrarFormNovoCliente] = useState(false);
   const [novoClienteNome, setNovoClienteNome] = useState('');
-  const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState<string | undefined>(undefined);
 
   // Venda
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -96,8 +99,12 @@ export default function EditarVendaPage() {
   };
 
   const cadastrarNovoCliente = async () => {
-    if (!novoClienteNome.trim() || !novoClienteTelefone.trim()) {
-      toast.error('Preencha nome e telefone!');
+    if (!novoClienteNome.trim()) {
+      toast.error('Preencha o nome do cliente!');
+      return;
+    }
+    if (!novoClienteTelefone || !isValidPhoneNumber(novoClienteTelefone)) {
+      toast.error('Número de telefone inválido');
       return;
     }
 
@@ -109,7 +116,7 @@ export default function EditarVendaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nome: novoClienteNome.trim(),
-          telefone: novoClienteTelefone.trim(),
+          telefone: novoClienteTelefone, // E.164
           dataNascimento: novoClienteDataNascimento || undefined,
           provou: false,
         }),
@@ -129,7 +136,7 @@ export default function EditarVendaPage() {
 
       setMostrarFormNovoCliente(false);
       setNovoClienteNome('');
-      setNovoClienteTelefone('');
+      setNovoClienteTelefone(undefined);
       setNovoClienteDataNascimento('');
       toast.success('Novo cliente cadastrado!');
     } catch (error) {
@@ -327,15 +334,12 @@ export default function EditarVendaPage() {
                   placeholder="Maria Silva"
                   required
                 />
-                <Input
-                  label="Telefone (com DDD)"
+                <PhoneInputField
+                  label="Telefone"
                   value={novoClienteTelefone}
-                  onChange={(e) => setNovoClienteTelefone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="47991234567"
+                  onChange={setNovoClienteTelefone}
+                  helperText="Selecione o país e digite o número com DDD"
                   required
-                  inputMode="numeric"
-                  maxLength={11}
-                  helperText="Apenas números, com DDD. Ex: 47991234567"
                 />
                 <Input
                   label="Data de Nascimento"
@@ -363,7 +367,7 @@ export default function EditarVendaPage() {
                     onClick={() => {
                       setMostrarFormNovoCliente(false);
                       setNovoClienteNome('');
-                      setNovoClienteTelefone('');
+                      setNovoClienteTelefone(undefined);
                       setNovoClienteDataNascimento('');
                     }}
                     disabled={loading}

@@ -24,10 +24,27 @@ export function formatarTelefone(telefone: string): string {
   return telefone;
 }
 
-// Validar telefone brasileiro
+// Validar telefone — aceita E.164 (+5553994242183) ou formato brasileiro legado (10/11 dígitos)
 export function validarTelefone(telefone: string): boolean {
+  if (!telefone) return false;
+  if (telefone.startsWith('+')) {
+    // Formato E.164: começa com +, entre 8 e 15 dígitos no total
+    const digits = telefone.replace(/\D/g, '');
+    return digits.length >= 8 && digits.length <= 15;
+  }
   const numero = telefone.replace(/\D/g, '');
   return numero.length === 10 || numero.length === 11;
+}
+
+// Normalizar telefone para E.164 (assume Brasil se não houver DDI)
+export function normalizarParaE164(telefone: string): string {
+  if (!telefone) return '';
+  if (telefone.startsWith('+')) return telefone;
+  const digits = telefone.replace(/\D/g, '');
+  if (digits.length === 10 || digits.length === 11) {
+    return `+55${digits}`;
+  }
+  return telefone;
 }
 
 // Formatar data do Firebase Timestamp

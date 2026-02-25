@@ -2,21 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhoneInputField from '@/components/ui/PhoneInputField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { validarTelefone, validarDataNascimento } from '@/lib/utils';
+import { validarDataNascimento, normalizarParaE164 } from '@/lib/utils';
 import { useDataNascimento } from '@/hooks/useDataNascimento';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  telefone: z.string().refine(validarTelefone, 'Telefone inválido (use DDD + número)'),
+  telefone: z
+    .string()
+    .min(1, 'Telefone é obrigatório')
+    .refine(
+      (val) => {
+        try { return isValidPhoneNumber(val); } catch { return false; }
+      },
+      'Número de telefone inválido'
+    ),
   dataNascimento: z
     .string()
     .optional()
@@ -35,13 +45,13 @@ export default function EditarClientePage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { telefone: '' },
   });
-
-  const telefoneField = register('telefone');
 
   useEffect(() => {
     if (params?.id) {
@@ -58,7 +68,8 @@ export default function EditarClientePage() {
       if (data.success) {
         const c = data.cliente;
         setValue('nome', c.nome);
-        setValue('telefone', c.telefone);
+        // Normaliza o telefone para E.164 ao carregar dados existentes
+        setValue('telefone', normalizarParaE164(c.telefone));
         if (c.dataNascimento) {
           setValue('dataNascimento', c.dataNascimento);
           setDataNascimento(c.dataNascimento);
@@ -76,10 +87,10 @@ export default function EditarClientePage() {
     try {
       setLoading(true);
 
-      const body: Record<string, any> = {
+      const body: Record<string, unknown> = {
         clienteId: params?.id as string,
         nome: data.nome,
-        telefone: data.telefone,
+        telefone: data.telefone, // já em E.164
       };
 
       if (data.dataNascimento) {
@@ -138,19 +149,19 @@ export default function EditarClientePage() {
               required
             />
 
-            <Input
-              label="Telefone (com DDD)"
-              {...telefoneField}
-              onChange={(e) => {
-                e.target.value = e.target.value.replace(/\D/g, '');
-                telefoneField.onChange(e);
-              }}
-              error={errors.telefone?.message}
-              placeholder="47991234567"
-              required
-              inputMode="numeric"
-              maxLength={11}
-              helperText="Apenas números, com DDD. Ex: 47991234567"
+            <Controller
+              name="telefone"
+              control={control}
+              render={({ field }) => (
+                <PhoneInputField
+                  label="Telefone"
+                  value={field.value}
+                  onChange={(val) => field.onChange(val ?? '')}
+                  error={errors.telefone?.message}
+                  helperText="Selecione o país e digite o número com DDD"
+                  required
+                />
+              )}
             />
 
             <Input
